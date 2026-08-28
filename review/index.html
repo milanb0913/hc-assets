@@ -71,14 +71,17 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
 }
 .row:hover { border-color: var(--accent); transform: translateY(-1px); }
 .row-unbuilt { opacity: 0.72; }
+.row-head { display: flex; align-items: center; gap: 12px; }
 .row-link {
   display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
-  text-decoration: none; color: var(--ink);
+  text-decoration: none; color: var(--ink); flex: 1; min-width: 0;
 }
 .row-link-muted { color: var(--ink); }
 .row-main { display: flex; align-items: center; gap: 10px; min-width: 200px; flex: 1; flex-wrap: wrap; }
 .row-title { font-weight: 500; font-size: 0.9rem; }
-.row-id { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); }
+.row-id { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+.row-id-link { text-decoration: none; }
+.row-id-link:hover { color: var(--accent); text-decoration: underline; }
 .row-counts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .status-badge {
   font-size: 0.68rem; font-weight: 700; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 100px;
@@ -100,12 +103,20 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
 .row-arrow { font-size: 0.78rem; font-weight: 600; color: var(--accent); white-space: nowrap; }
 .row-arrow-muted { color: var(--muted); font-weight: 500; }
 .row-extras {
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px;
-  border-top: 1px dashed var(--border); font-size: 0.78rem; color: var(--ink-soft);
+  margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);
+  font-size: 0.78rem; color: var(--ink-soft); display: flex; flex-direction: column; gap: 8px;
 }
-.row-extra-note { font-style: italic; color: var(--muted); }
-.row-hc-link { color: var(--accent); text-decoration: none; font-weight: 500; }
-.row-hc-link:hover { text-decoration: underline; }
+.row-extra { align-self: flex-start; }
+/* The bottom-half notes block, made deliberately more prominent than the
+   inline "Assigned" chip above it, per Milan's request 2026-08-28. */
+.row-notes {
+  background: var(--surface-sunken); border-radius: 8px; padding: 10px 12px;
+  font-size: 0.84rem; color: var(--ink); line-height: 1.45; white-space: pre-wrap;
+}
+.row-notes-label {
+  display: block; font-size: 0.66rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--muted); margin-bottom: 4px;
+}
 .jump { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; }
 .jump a { font-size: 0.76rem; color: var(--ink-soft); text-decoration: none; font-family: 'IBM Plex Mono', monospace; }
 .jump a:hover { color: var(--accent); }
@@ -284,19 +295,24 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     }
     if (frozen > 0) progressChips += '<span class="chip chip-frozen" title="Permanently correct, never recaptured">' + frozen + ' frozen</span>';
 
-    var extras = '';
-    if (assignedVal) extras += '<span class="row-extra">Assigned: ' + esc(assignedVal) + '</span>';
-    if (note) extras += '<span class="row-extra row-extra-note">' + esc(note) + '</span>';
+    var assignedHtml = assignedVal ? '<span class="row-extra">Assigned: ' + esc(assignedVal) + '</span>' : '';
+    // A dedicated, more prominent block for the bottom half of the card - not
+    // squeezed inline with Assigned, per Milan's request 2026-08-28.
+    var notesHtml = note ? '<div class="row-notes"><span class="row-notes-label">Notes</span>' + esc(note) + '</div>' : '';
+
     var hcUrl = hcUrls[a.id];
-    // A sibling <a>, not nested inside linkHtml's own <a> - two anchors
-    // sharing one parent is valid HTML; one anchor inside another is not.
-    if (hcUrl) extras += '<a class="row-extra row-hc-link" href="' + esc(hcUrl) + '" target="_blank" rel="noopener">View live on Help Center &rarr;</a>';
+    // The id is its OWN <a> to the live HC article now, sibling to (not
+    // nested inside) linkHtml's own <a> - two anchors sharing one parent is
+    // valid HTML, one anchor inside another is not. Replaces the earlier
+    // separate "View live on Help Center" row per Milan's request.
+    var idHtml = hcUrl
+      ? '<a class="row-id row-id-link" href="' + esc(hcUrl) + '" target="_blank" rel="noopener" title="View live on Help Center">#' + esc(a.id) + '</a>'
+      : '<span class="row-id">#' + esc(a.id) + '</span>';
 
     var inner = (
       '<div class="row-main">' +
         '<span class="status-badge ' + meta.cls + '">' + esc(meta.label) + '</span>' +
         '<span class="row-title">' + esc(a.articleTitle || a.title) + '</span>' +
-        '<span class="row-id">#' + esc(a.id) + '</span>' +
       '</div>' +
       '<div class="row-counts">' + progressChips + '</div>'
     );
@@ -304,8 +320,10 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     var linkHtml = relPath
       ? '<a class="row-link" href="' + esc(relPath) + '" target="_blank" rel="noopener">' + inner + '<span class="row-arrow">Open →</span></a>'
       : '<div class="row-link row-link-muted">' + inner + '<span class="row-arrow row-arrow-muted">Not built yet</span></div>';
-    return '<div class="row' + (relPath ? '' : ' row-unbuilt') + '" ' + dataAttrs + '>' + linkHtml +
-      (extras ? '<div class="row-extras">' + extras + '</div>' : '') + '</div>';
+    return '<div class="row' + (relPath ? '' : ' row-unbuilt') + '" ' + dataAttrs + '>' +
+      '<div class="row-head">' + linkHtml + idHtml + '</div>' +
+      (assignedHtml || notesHtml ? '<div class="row-extras">' + assignedHtml + notesHtml + '</div>' : '') +
+      '</div>';
   }
 
   function buildMain() {
