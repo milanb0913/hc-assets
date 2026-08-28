@@ -1,0 +1,385 @@
+<title>Hiding Qualifications and Scholarships from Applicants — Shot Review</title>
+<style id="head-styles">@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
+
+:root {
+  --bg: #f2f3f6; --surface: #ffffff; --surface-sunken: #eceef2; --ink: #1e2430;
+  --ink-soft: #4b5266; --muted: #767e91; --border: #dfe2e9; --accent: #c2185b;
+  --pass: #1a7a4c; --pass-soft: #e4f5ec; --fail: #b3261e; --fail-soft: #fbe9e7;
+  --pending: #8a6d00; --pending-soft: #fbf3d9; --shadow: rgba(30, 36, 48, 0.10);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161a22; --surface: #1e2430; --surface-sunken: #191d26; --ink: #eceff4;
+    --ink-soft: #b7bdcc; --muted: #8b91a3; --border: #2d3444; --accent: #ec5c8d;
+    --pass: #4fd08c; --pass-soft: #16281f; --fail: #ff6b61; --fail-soft: #2c1815;
+    --pending: #e0c04a; --pending-soft: #2c2611; --shadow: rgba(0, 0, 0, 0.45);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161a22; --surface: #1e2430; --surface-sunken: #191d26; --ink: #eceff4;
+  --ink-soft: #b7bdcc; --muted: #8b91a3; --border: #2d3444; --accent: #ec5c8d;
+  --pass: #4fd08c; --pass-soft: #16281f; --fail: #ff6b61; --fail-soft: #2c1815;
+  --pending: #e0c04a; --pending-soft: #2c2611; --shadow: rgba(0, 0, 0, 0.45);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); }
+body { color: var(--ink); font-family: 'IBM Plex Sans', system-ui, sans-serif; line-height: 1.5; }
+a { color: var(--accent); }
+.masthead {
+  position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 20px clamp(20px, 5vw, 56px); display: flex; align-items: baseline; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+}
+.masthead-left { display: flex; flex-direction: column; gap: 6px; }
+.masthead h1 { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; font-size: 1.5rem; margin: 0; text-wrap: balance; }
+.hub-back { font-size: 0.78rem; color: var(--muted); text-decoration: none; }
+.hub-back:hover { color: var(--accent); }
+.masthead-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.stats { display: flex; gap: 14px; font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; font-variant-numeric: tabular-nums; }
+.stat b { font-size: 0.95rem; }
+.stat-pass { color: var(--pass); } .stat-fail { color: var(--fail); } .stat-pending { color: var(--muted); }
+.stat-neutral { color: var(--ink-soft); }
+.reviewer-row { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--ink-soft); }
+.reviewer-row input {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.82rem; color: var(--ink);
+  background: var(--surface-sunken); border: 1.5px solid var(--border); border-radius: 6px; padding: 4px 8px; width: 150px;
+}
+.reviewer-row input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+.sync-status, .save-status { font-size: 0.72rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; max-width: 320px; text-align: right; }
+.save-status-error { color: var(--fail); font-weight: 600; }
+main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80px; }
+.intro { color: var(--ink-soft); max-width: 72ch; margin: 28px 0 32px; font-size: 0.95rem; }
+.cards { display: flex; flex-direction: column; gap: 28px; }
+.pair { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px 20px; box-shadow: 0 1px 2px var(--shadow); }
+.pair-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
+.pair-head-left { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.shot-num { font-size: 0.85rem; color: var(--ink-soft); font-weight: 500; }
+.shot-id { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--muted); background: var(--surface-sunken); padding: 2px 8px; border-radius: 5px; }
+.status { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 10px; border-radius: 100px; white-space: nowrap; }
+.status-pass { background: var(--pass-soft); color: var(--pass); }
+.status-fail { background: var(--fail-soft); color: var(--fail); }
+.status-pending { background: var(--surface-sunken); color: var(--muted); }
+.status-awaiting { background: var(--pending-soft); color: var(--pending); }
+.frames { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.frame { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.frame-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.frame-label span { font-weight: 400; text-transform: none; letter-spacing: 0; opacity: 0.75; }
+.frame-old .frame-label { color: var(--muted); }
+.frame-new .frame-label { color: var(--accent); }
+.imgwrap { border: 1px solid var(--border); border-radius: 6px; overflow: auto; background: var(--surface-sunken); max-height: 560px; }
+.imgwrap img { display: block; width: 100%; height: auto; }
+.caption { margin: 14px 0 0; font-size: 0.87rem; color: var(--ink-soft); max-width: 84ch; }
+.verdict-row { display: flex; gap: 10px; margin-top: 16px; }
+.vbtn {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.85rem; font-weight: 600;
+  padding: 8px 18px; border-radius: 8px; cursor: pointer; border: 1.5px solid var(--border);
+  background: var(--surface-sunken); color: var(--ink-soft); transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.vbtn:hover { border-color: var(--muted); }
+.vbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.vbtn-pass.active { background: var(--pass-soft); border-color: var(--pass); color: var(--pass); }
+.vbtn-fail.active { background: var(--fail-soft); border-color: var(--fail); color: var(--fail); }
+.imgwrap.awaiting { display: flex; align-items: center; justify-content: center; min-height: 120px; }
+.awaiting-msg { color: var(--pending); font-size: 0.85rem; font-weight: 600; padding: 20px; text-align: center; }
+.notes-row { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.notes-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.notes-input {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.85rem; color: var(--ink);
+  background: var(--surface-sunken); border: 1.5px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; min-height: 56px; resize: vertical; line-height: 1.4;
+}
+.notes-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+.notes-input::placeholder { color: var(--muted); }
+.nothing-yet { margin: 16px 0 0; font-size: 0.82rem; color: var(--muted); font-style: italic; }
+.other-reviews { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 6px; }
+.other-reviews-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.other-review-row { font-size: 0.82rem; color: var(--ink-soft); display: block; }
+.other-review-note { color: var(--muted); font-style: italic; }
+.chip { font-size: 0.7rem; font-weight: 600; padding: 2px 9px; border-radius: 100px; white-space: nowrap; }
+.chip-pass { background: var(--pass-soft); color: var(--pass); }
+.chip-fail { background: var(--fail-soft); color: var(--fail); }
+.chip-pending { background: var(--surface-sunken); color: var(--muted); }
+@media (max-width: 720px) { .frames { grid-template-columns: 1fr; } }
+</style>
+<div class="masthead">
+  <div class="masthead-left">
+    <a class="hub-back" href="../index.html">&larr; All articles</a>
+    <h1>Hiding Qualifications and Scholarships from Applicants — Shot Review</h1>
+    <div id="stats" class="stats"></div>
+  </div>
+  <div class="masthead-right">
+    <span class="reviewer-row">Reviewing as <input type="text" id="reviewer-name" placeholder="your name"></span>
+    <span id="sync-status" class="sync-status"></span>
+  </div>
+</div>
+<main>
+  <p class="intro">Legacy vs. current for every shot in this article. Click Pass or Fail to record a verdict, or add a note — both are saved to the shared review sheet immediately.</p>
+  <div id="cards" class="cards"></div>
+</main>
+<script id="data-shots" type="application/json">[{"id":"hide-01-02-settings-scholarships-path","legacy":"data:image/png;base64,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","new_":"https://milanb0913.github.io/hc-assets/staging/PROD_SM_Managing_Scholarships_HidingQualificationsAndScholarshipsFromApplicants_hide-01-02-settings-scholarships-path_boxed.png","caption":""}]</script>
+<script id="data-meta" type="application/json">{"articleId":"15706692","articleTitle":"Hiding Qualifications and Scholarships from Applicants","docTitle":"Hiding Qualifications and Scholarships from Applicants — Shot Review","intro":"Legacy vs. current for every shot in this article. Click Pass or Fail to record a verdict, or add a note — both are saved to the shared review sheet immediately.","syncEndpoint":"https://script.google.com/macros/s/AKfycbwlQAH9fZwBYpNUOXoDvnP53Yodv8APLAoWdgmNEfKfBLSwIK4MsE3KtJ3igxExw5H8/exec","hubUrl":"../index.html"}</script>
+<script id="render-script">// Client-side runtime for the STATIC (GitHub Pages) per-article shot-review
+// page. Sibling of review-doc-client.js (the claude.ai Artifact version) —
+// same card layout/shot data, but state lives in the Sheet behind
+// review-sync.gs instead of the page republishing itself via the `artifact`
+// capability (GitHub Pages has no such capability, and doesn't need one:
+// nothing here is secret, see review-sync.gs's own header comment).
+//
+// Verdicts/notes are NOT embedded at build time — they're fetched fresh from
+// the sync endpoint on every page load (`?mode=rows`), so a rebuild of this
+// page can never go stale relative to what reviewers have already recorded,
+// and a reviewer never needs to wait for a rebuild to see a teammate's vote.
+(function () {
+  var shots = JSON.parse(document.getElementById('data-shots').textContent);
+  var meta = JSON.parse(document.getElementById('data-meta').textContent);
+  var SYNC_ENDPOINT = meta.syncEndpoint;
+  var REVIEWER_KEY = 'hc_review_reviewer_name';
+
+  // rowsByShot: shotId -> array of {reviewer, verdict, note, updated_at}, every
+  // real (non-placeholder) row currently in the Sheet for THIS article. null
+  // until the fetch resolves; stays null if the fetch fails or the deployed
+  // endpoint is still the old pre-doGet version (see syncAvailable below).
+  var rowsByShot = null;
+  var syncAvailable = false;
+  var syncError = null;
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function getReviewerName() {
+    try { return (localStorage.getItem(REVIEWER_KEY) || '').trim(); } catch (e) { return ''; }
+  }
+  function setReviewerName(v) {
+    try { localStorage.setItem(REVIEWER_KEY, v.trim()); } catch (e) { /* ignore */ }
+  }
+
+  function myRow(shotId) {
+    var name = getReviewerName();
+    if (!name || !rowsByShot || !rowsByShot[shotId]) return null;
+    var found = null;
+    rowsByShot[shotId].forEach(function (r) { if (r.reviewer === name) found = r; });
+    return found;
+  }
+
+  function otherRows(shotId) {
+    var name = getReviewerName();
+    if (!rowsByShot || !rowsByShot[shotId]) return [];
+    return rowsByShot[shotId].filter(function (r) { return r.reviewer !== name; });
+  }
+
+  // "Old UI" (no new_ capture yet) is a different fact from "unreviewed" -
+  // same distinction review-doc-client.js draws. Pass/fail/neutral only run
+  // over shots that HAVE a new_ capture.
+  function statCounts() {
+    var pass = 0, fail = 0, neutral = 0, newCount = 0;
+    shots.forEach(function (s) {
+      if (!s.new_) return;
+      newCount++;
+      var mine = myRow(s.id);
+      var v = mine ? mine.verdict : null;
+      if (v === 'pass') pass++; else if (v === 'fail') fail++; else neutral++;
+    });
+    return { pass: pass, fail: fail, neutral: neutral, newCount: newCount, oldCount: shots.length - newCount };
+  }
+
+  function newFrame(s) {
+    if (s.new_) {
+      return '<div class="imgwrap"><img src="' + esc(s.new_) + '" alt="' + esc(s.id) + ' current" loading="lazy"></div>';
+    }
+    return '<div class="imgwrap awaiting"><div class="awaiting-msg">Not captured yet</div></div>';
+  }
+
+  function otherReviewsHtml(s) {
+    var others = otherRows(s.id);
+    if (!others.length) return '';
+    return '<div class="other-reviews"><span class="other-reviews-label">Other reviewers</span>' +
+      others.map(function (r) {
+        var cls = r.verdict === 'pass' ? 'chip-pass' : r.verdict === 'fail' ? 'chip-fail' : 'chip-pending';
+        var label = r.verdict === 'pass' ? 'Pass' : r.verdict === 'fail' ? 'Fail' : 'no verdict';
+        return '<span class="other-review-row"><b>' + esc(r.reviewer) + '</b> <span class="chip ' + cls + '">' + label + '</span>' +
+          (r.note ? ' <span class="other-review-note">' + esc(r.note) + '</span>' : '') + '</span>';
+      }).join('') + '</div>';
+  }
+
+  function shotCard(s, idx) {
+    var mine = myRow(s.id);
+    var v = mine ? mine.verdict : null;
+    var n = mine ? (mine.note || '') : '';
+    var statusClass = !s.new_ ? 'status-awaiting' : v === 'pass' ? 'status-pass' : v === 'fail' ? 'status-fail' : 'status-pending';
+    var statusLabel = !s.new_ ? 'Awaiting capture' : v === 'pass' ? 'Pass (you)' : v === 'fail' ? 'Fail (you)' : 'Unreviewed';
+    return (
+      '<article class="pair" id="shot-' + esc(s.id) + '">' +
+        '<header class="pair-head">' +
+          '<div class="pair-head-left">' +
+            '<span class="shot-num">Shot #' + (idx + 1) + ' in ' + esc(meta.articleTitle) + '</span>' +
+            '<code class="shot-id">' + esc(s.id) + '</code>' +
+          '</div>' +
+          '<span class="status ' + statusClass + '">' + statusLabel + '</span>' +
+        '</header>' +
+        '<div class="frames">' +
+          '<figure class="frame frame-old">' +
+            '<div class="frame-label">Before <span>legacy</span></div>' +
+            '<div class="imgwrap"><img src="' + esc(s.legacy) + '" alt="' + esc(s.id) + ' legacy" loading="lazy"></div>' +
+          '</figure>' +
+          '<figure class="frame frame-new">' +
+            '<div class="frame-label">After <span>current</span></div>' +
+            newFrame(s) +
+          '</figure>' +
+        '</div>' +
+        (s.caption ? '<p class="caption">' + esc(s.caption) + '</p>' : '') +
+        (s.new_ ?
+          '<div class="verdict-row">' +
+            '<button type="button" class="vbtn vbtn-pass' + (v === 'pass' ? ' active' : '') + '" data-id="' + esc(s.id) + '" data-val="pass">Pass</button>' +
+            '<button type="button" class="vbtn vbtn-fail' + (v === 'fail' ? ' active' : '') + '" data-id="' + esc(s.id) + '" data-val="fail">Fail</button>' +
+          '</div>'
+          : '<p class="nothing-yet">Nothing to review yet - no new capture.</p>') +
+        (s.new_ ?
+          '<div class="notes-row">' +
+            '<label class="notes-label" for="notes-' + esc(s.id) + '">Your notes</label>' +
+            '<textarea class="notes-input" id="notes-' + esc(s.id) + '" data-id="' + esc(s.id) + '" placeholder="Add a note - saved when you click away">' + esc(n) + '</textarea>' +
+          '</div>' : '') +
+        otherReviewsHtml(s) +
+      '</article>'
+    );
+  }
+
+  function render() {
+    var counts = statCounts();
+    document.getElementById('stats').innerHTML =
+      '<span class="stat stat-neutral"><b>' + counts.newCount + '</b> new UI</span>' +
+      '<span class="stat stat-neutral"><b>' + counts.oldCount + '</b> old UI</span>' +
+      '<span class="stat stat-pass"><b>' + counts.pass + '</b> pass (you)</span>' +
+      '<span class="stat stat-fail"><b>' + counts.fail + '</b> fail (you)</span>' +
+      '<span class="stat stat-pending"><b>' + counts.neutral + '</b> unreviewed (you)</span>';
+    document.getElementById('cards').innerHTML = shots.map(shotCard).join('\n');
+    Array.prototype.forEach.call(document.querySelectorAll('.vbtn'), function (btn) {
+      btn.addEventListener('click', function () {
+        setVerdict(btn.getAttribute('data-id'), btn.getAttribute('data-val'));
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.notes-input'), function (ta) {
+      ta.addEventListener('blur', function () {
+        setNote(ta.getAttribute('data-id'), ta.value);
+      });
+    });
+  }
+
+  function setSyncStatus(text, isError) {
+    var el = document.getElementById('sync-status');
+    if (!el) return;
+    el.textContent = text;
+    el.classList.toggle('save-status-error', !!isError);
+  }
+
+  function ensureReviewerName() {
+    var name = getReviewerName();
+    if (name) return name;
+    var input = document.getElementById('reviewer-name');
+    if (input) input.focus();
+    setSyncStatus('Enter your name above before recording a verdict', true);
+    return null;
+  }
+
+  // Apps Script Web Apps do not answer CORS preflight (OPTIONS) requests
+  // correctly, so any fetch() whose browser-set Content-Type would trigger a
+  // preflight (e.g. 'application/json') silently fails cross-origin. Posting
+  // as 'text/plain' keeps this a CORS "simple request" - doPost() still gets
+  // the raw JSON text via e.postData.contents and JSON.parse()s it exactly
+  // the same either way, so nothing server-side needs to change for this.
+  function postRows(rows) {
+    return fetch(SYNC_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(rows),
+    }).then(function (r) { return r.json(); });
+  }
+
+  function upsertLocalRow(shotId, patch) {
+    var name = getReviewerName();
+    if (!rowsByShot) rowsByShot = {};
+    if (!rowsByShot[shotId]) rowsByShot[shotId] = [];
+    var found = null;
+    rowsByShot[shotId].forEach(function (r) { if (r.reviewer === name) found = r; });
+    if (found) { Object.keys(patch).forEach(function (k) { found[k] = patch[k]; }); }
+    else rowsByShot[shotId].push(Object.assign({ reviewer: name, verdict: '', note: '' }, patch));
+  }
+
+  function setVerdict(shotId, val) {
+    var name = ensureReviewerName();
+    if (!name) return;
+    var current = myRow(shotId);
+    var next = (current && current.verdict === val) ? '' : val; // click again to clear
+    var note = current ? (current.note || '') : '';
+    upsertLocalRow(shotId, { verdict: next, note: note });
+    render();
+    setSyncStatus('Saving…', false);
+    postRows([{ reviewer: name, article_id: meta.articleId, article: meta.articleTitle, slot: shotId, shot_id: shotId, verdict: next, reasons: [], note: note, boxes: [] }])
+      .then(function (resp) {
+        if (resp && resp.ok) setSyncStatus('Saved', false);
+        else setSyncStatus('Not saved — ' + (resp && resp.error ? resp.error : 'unknown error'), true);
+      })
+      .catch(function (e) { setSyncStatus('Not saved — network error (' + e.message + ')', true); });
+  }
+
+  function setNote(shotId, val) {
+    val = val.trim();
+    var name = getReviewerName();
+    if (!name) return; // no verdict/reviewer yet - nothing to attach a note to server-side
+    var current = myRow(shotId);
+    if (current && (current.note || '') === val) return;
+    var verdict = current ? current.verdict : '';
+    upsertLocalRow(shotId, { note: val });
+    setSyncStatus('Saving…', false);
+    postRows([{ reviewer: name, article_id: meta.articleId, article: meta.articleTitle, slot: shotId, shot_id: shotId, verdict: verdict, reasons: [], note: val, boxes: [] }])
+      .then(function (resp) {
+        if (resp && resp.ok) setSyncStatus('Saved', false);
+        else setSyncStatus('Not saved — ' + (resp && resp.error ? resp.error : 'unknown error'), true);
+      })
+      .catch(function (e) { setSyncStatus('Not saved — network error (' + e.message + ')', true); });
+  }
+
+  function loadRows() {
+    if (!SYNC_ENDPOINT) { setSyncStatus('Sync not configured', true); render(); return; }
+    fetch(SYNC_ENDPOINT + '?mode=rows')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || !Array.isArray(data.rows)) {
+          // Old deployment (pre 2026-08-26) answers a plain GET with
+          // {ok:true,sheet:"QA"} and has no ?mode=rows support at all.
+          syncAvailable = false;
+          setSyncStatus('Sync not available yet — verdicts display is disabled, but Pass/Fail still saves once you record one', true);
+          render();
+          return;
+        }
+        syncAvailable = true;
+        rowsByShot = {};
+        data.rows.forEach(function (row) {
+          if (String(row.article_id) !== String(meta.articleId)) return;
+          var sid = String(row.shot_id || row.slot);
+          if (!rowsByShot[sid]) rowsByShot[sid] = [];
+          rowsByShot[sid].push(row);
+        });
+        setSyncStatus('Synced', false);
+        setTimeout(function () { setSyncStatus('', false); }, 2500);
+        render();
+      })
+      .catch(function (e) {
+        syncError = e;
+        setSyncStatus('Sync not available (' + e.message + ') — Pass/Fail still saves, but you won’t see existing verdicts until this loads', true);
+        render();
+      });
+  }
+
+  var reviewerInput = document.getElementById('reviewer-name');
+  if (reviewerInput) {
+    reviewerInput.value = getReviewerName();
+    reviewerInput.addEventListener('change', function () { setReviewerName(reviewerInput.value); render(); });
+    reviewerInput.addEventListener('blur', function () { setReviewerName(reviewerInput.value); });
+  }
+
+  render();
+  loadRows();
+})();
+</script>
