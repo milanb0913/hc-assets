@@ -170,7 +170,8 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
   </div>
   <div class="filters filters-scope" id="filters-scope">
     <span class="filters-label">Scope</span>
-    <label class="filter-chip scope-chip"><input type="checkbox" id="scope-dm-filter"> Include Donor Management</label>
+    <label class="filter-chip scope-chip active"><input type="checkbox" id="scope-sm-filter" checked> Scholarship Management</label>
+    <label class="filter-chip scope-chip"><input type="checkbox" id="scope-dm-filter"> Donor Management</label>
   </div>
   <div class="filters filters-sections" id="filters-sections">
     <span class="filters-label">Sections</span>
@@ -385,7 +386,8 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
       '</div>' +
       '<div class="row-counts">' + progressChips + '</div>'
     );
-    var dataAttrs = 'data-status="' + status + '" data-assigned="' + esc(assignedVal) + '"';
+    var collection = dmIds[id] ? 'DM' : 'SM';
+    var dataAttrs = 'data-status="' + status + '" data-assigned="' + esc(assignedVal) + '" data-collection="' + collection + '"';
     var linkHtml = relPath
       ? '<a class="row-link" href="' + esc(relPath) + '" target="_blank" rel="noopener">' + inner + '<span class="row-arrow">Open →</span></a>'
       : '<div class="row-link row-link-muted">' + inner + '<span class="row-arrow row-arrow-muted">Not built yet</span></div>';
@@ -475,11 +477,46 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     return Object.keys(names).sort().map(function (n) { return '<option value="' + esc(n) + '">'; }).join('');
   }
 
+  // Filter state persists across visits (2026-08-31, Milan: "last set config
+  // persists until changed") - one localStorage blob, restored once before
+  // the first render and rewritten every time applyFilters runs. Wrapped in
+  // try/catch since a private window or blocked site data throws on access,
+  // and that must never break the page - it just means no persistence.
+  var STORAGE_KEY = 'hc-hub-filters-v1';
+  function loadFilterState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+  function saveFilterState(state) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+  function restoreControlsFromState() {
+    var saved = loadFilterState();
+    if (!saved) return; // first visit - leave the server-rendered defaults as-is
+    var statusBoxes = Array.prototype.slice.call(document.querySelectorAll('#filters input[data-status-filter]'));
+    statusBoxes.forEach(function (cb) {
+      cb.checked = (saved.statuses || []).indexOf(cb.getAttribute('data-status-filter')) !== -1;
+    });
+    var smToggle = document.getElementById('scope-sm-filter');
+    if (smToggle && typeof saved.includeSM === 'boolean') smToggle.checked = saved.includeSM;
+    var dmToggle = document.getElementById('scope-dm-filter');
+    if (dmToggle && typeof saved.includeDM === 'boolean') dmToggle.checked = saved.includeDM;
+    var sectionBoxes = Array.prototype.slice.call(document.querySelectorAll('#filters-sections input[data-section-filter]'));
+    if (saved.sections) {
+      sectionBoxes.forEach(function (cb) {
+        cb.checked = saved.sections.indexOf(cb.getAttribute('data-section-filter')) !== -1;
+      });
+    }
+    var assigneeSelect = document.getElementById('assignee-filter');
+    if (assigneeSelect && typeof saved.assignee === 'string') assigneeSelect.value = saved.assignee;
+    var searchInput = document.getElementById('search-input');
+    if (searchInput && typeof saved.q === 'string') searchInput.value = saved.q;
+  }
+
   function rowMatches(row, state) {
     var status = row.getAttribute('data-status');
-    // Donor Management is excluded by default - a separate Scope toggle, not
-    // one more status chip to remember to leave unchecked (2026-08-31, Milan).
-    if (status === 'out-of-scope' && !state.includeDM) return false;
     if (state.statuses.length && state.statuses.indexOf(status) === -1) return false;
     if (state.assignee) {
       var rowAssignee = row.getAttribute('data-assigned') || '';
@@ -505,10 +542,18 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     var assignee = assigneeSelect ? assigneeSelect.value : '';
     var searchInput = document.getElementById('search-input');
     var q = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+    // Scope: Scholarship Management and Donor Management are two independent
+    // toggles now, not one default-off DM checkbox (2026-08-31, Milan) - each
+    // can be shown/hidden on its own, symmetric with each other.
+    var smToggle = document.getElementById('scope-sm-filter');
     var dmToggle = document.getElementById('scope-dm-filter');
+    var includeSM = smToggle ? smToggle.checked : true;
     var includeDM = dmToggle ? dmToggle.checked : false;
+    if (smToggle) smToggle.closest('.filter-chip').classList.toggle('active', includeSM);
     if (dmToggle) dmToggle.closest('.filter-chip').classList.toggle('active', includeDM);
-    var state = { statuses: statuses, assignee: assignee, q: q, includeDM: includeDM };
+
+    var state = { statuses: statuses, assignee: assignee, q: q };
     var anyActive = statuses.length > 0 || !!assignee || !!q;
 
     // Sections filter is its own AND-condition, independent of anyActive -
@@ -516,9 +561,14 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     var sectionBoxes = Array.prototype.slice.call(document.querySelectorAll('#filters-sections input[data-section-filter]'));
     var activeSections = {};
     var anySectionChecked = false;
+    var checkedSections = [];
     sectionBoxes.forEach(function (cb) {
       cb.closest('.filter-chip').classList.toggle('active', cb.checked);
-      if (cb.checked) { activeSections[cb.getAttribute('data-section-filter')] = true; anySectionChecked = true; }
+      if (cb.checked) {
+        activeSections[cb.getAttribute('data-section-filter')] = true;
+        anySectionChecked = true;
+        checkedSections.push(cb.getAttribute('data-section-filter'));
+      }
     });
 
     var allRows = Array.prototype.slice.call(document.querySelectorAll('.row[data-status]'));
@@ -527,12 +577,10 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
       var sectionEl = row.closest('.hc-section');
       var sectionName = sectionEl ? sectionEl.getAttribute('data-section') : null;
       var sectionOk = !sectionName || (anySectionChecked && activeSections[sectionName]);
+      var collection = row.getAttribute('data-collection');
+      var scopeOk = collection === 'DM' ? includeDM : includeSM;
       var statusOk = !anyActive || rowMatches(row, state);
-      // Even with no status filter active, the DM scope toggle still applies -
-      // rowMatches' own DM check only runs when statusOk is evaluated, so
-      // re-check it here for the "nothing else filtered" default case.
-      var dmOk = row.getAttribute('data-status') !== 'out-of-scope' || includeDM;
-      var show = sectionOk && statusOk && dmOk;
+      var show = sectionOk && scopeOk && statusOk;
       row.classList.toggle('filter-hidden', !show);
       if (show) visible++;
     });
@@ -545,8 +593,12 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
       sec.classList.toggle('filter-hidden', !anyVisible);
     });
     var countEl = document.getElementById('filter-count');
-    var totalSelectable = allRows.filter(function (r) { return r.getAttribute('data-status') !== 'out-of-scope' || includeDM; }).length;
+    var totalSelectable = allRows.filter(function (r) {
+      return r.getAttribute('data-collection') === 'DM' ? includeDM : includeSM;
+    }).length;
     countEl && (countEl.textContent = 'showing ' + visible + ' of ' + totalSelectable + ' articles');
+
+    saveFilterState({ statuses: statuses, includeSM: includeSM, includeDM: includeDM, sections: checkedSections, assignee: assignee, q: searchInput ? searchInput.value : '' });
   }
 
   var filterControlsWired = false;
@@ -558,6 +610,8 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     if (assigneeSelect) assigneeSelect.addEventListener('change', applyFilters);
     var searchInput = document.getElementById('search-input');
     if (searchInput) searchInput.addEventListener('input', applyFilters);
+    var smToggle = document.getElementById('scope-sm-filter');
+    if (smToggle) smToggle.addEventListener('change', applyFilters);
     var dmToggle = document.getElementById('scope-dm-filter');
     if (dmToggle) dmToggle.addEventListener('change', applyFilters);
     var sectionBoxes = Array.prototype.slice.call(document.querySelectorAll('#filters-sections input[data-section-filter]'));
@@ -646,6 +700,7 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
       });
   }
 
+  restoreControlsFromState();
   render();
   loadSyncCounts();
 })();
