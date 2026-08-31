@@ -1,5 +1,5 @@
 {
-  "builtAt": "2026-08-31T12:05:59.158Z",
+  "builtAt": "2026-08-31T12:11:50.303Z",
   "count": 166,
   "skipped": [
     {
@@ -1515,10 +1515,10 @@
     {
       "id": "15706601",
       "title": "Donor Guide",
-      "total": 14,
-      "shipped": 14,
+      "total": 13,
+      "shipped": 13,
       "hasManifest": true,
-      "bytes": 1417051,
+      "bytes": 984843,
       "relPath": "15706601/"
     },
     {
