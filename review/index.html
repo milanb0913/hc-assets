@@ -160,7 +160,6 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     <label class="filter-chip"><input type="checkbox" data-status-filter="needs-review"> Needs Review</label>
     <label class="filter-chip"><input type="checkbox" data-status-filter="not-ready"> In Progress</label>
     <label class="filter-chip"><input type="checkbox" data-status-filter="ready"> Ready to Publish</label>
-    <label class="filter-chip"><input type="checkbox" data-status-filter="signed-off"> Signed Off</label>
     <label class="filter-chip"><input type="checkbox" data-status-filter="no-due-shots"> Nothing Due</label>
     <label class="filter-chip"><input type="checkbox" data-status-filter="no-data"> Not Started</label>
     <label class="filter-chip"><input type="checkbox" data-status-filter="no-shots"> No Shot</label>
@@ -293,7 +292,13 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
   }
 
   function computeStatus(a, c) {
-    if (signedOff[a.id]) return 'signed-off';
+    // "Signed Off" retired 2026-08-31 (Milan, review/reports/OPEN-THREADS.md B115) - it used to
+    // be checked FIRST here, meaning it could override and show "Signed Off" on an article that
+    // wasn't even fully captured yet (the exact premature-sign-off bug this file used to flag as
+    // still-open). Everything it was used for already has a home: "reviewed, ship it" is Ready to
+    // Publish below; "reviewed, confirmed nothing to capture, permanently" (the Static Reports
+    // family) is Nothing Due/No Shot below, with the human confirmation already preserved in that
+    // article's own hub note - no status-level flag needed for it.
     if (dmIds[a.id]) return 'out-of-scope';
     if (!a.hasManifest) {
       // A structurally shotless article (the live HC page itself has zero
@@ -315,13 +320,12 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
   // Title Case throughout, "Capturing"->"In Progress", "Ready to sign off"->"Ready to
   // Publish", "N/A"->"No Shot" (same word as the capture-track label it pairs with,
   // deliberately not a second word for the same idea).
-  var STATUS_ORDER = ['has-fails', 'needs-review', 'not-ready', 'ready', 'signed-off', 'no-due-shots', 'no-data', 'out-of-scope', 'no-shots'];
+  var STATUS_ORDER = ['has-fails', 'needs-review', 'not-ready', 'ready', 'no-due-shots', 'no-data', 'out-of-scope', 'no-shots'];
   var STATUS_META = {
     'has-fails':    { label: 'Has Fails',         cls: 'status-fail' },
     'needs-review': { label: 'Needs Review',      cls: 'status-review' },
     'not-ready':    { label: 'In Progress',       cls: 'status-progress' },
     'ready':        { label: 'Ready to Publish',  cls: 'status-ready' },
-    'signed-off':   { label: 'Signed Off',        cls: 'status-signedoff' },
     'no-due-shots': { label: 'Nothing Due',       cls: 'status-muted' },
     'no-data':      { label: 'Not Started',       cls: 'status-muted' },
     'out-of-scope': { label: 'DM',                cls: 'status-muted' },
@@ -415,7 +419,7 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
   }
 
   function computeHeadlineCounts() {
-    var counts = { 'has-fails': 0, 'needs-review': 0, 'not-ready': 0, 'ready': 0, 'signed-off': 0 };
+    var counts = { 'has-fails': 0, 'needs-review': 0, 'not-ready': 0, 'ready': 0 };
     var inScope = 0;
     var articlesReady = 0, dueShotsTotal = 0, dueShotsShipped = 0;
     function tally(id) {
@@ -456,7 +460,6 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     var h = computeHeadlineCounts();
     return (
       '<h3>QA breakdown</h3>' +
-      '<div class="sidebar-stat stat-signedoff"><span>Signed Off</span><span class="n">' + h.counts['signed-off'] + '</span></div>' +
       '<div class="sidebar-stat stat-fail"><span>Has Fails</span><span class="n">' + h.counts['has-fails'] + '</span></div>' +
       '<div class="sidebar-stat stat-review"><span>Needs Review</span><span class="n">' + h.counts['needs-review'] + '</span></div>' +
       '<div class="sidebar-stat stat-ready"><span>Ready to Publish</span><span class="n">' + h.counts['ready'] + '</span></div>' +
