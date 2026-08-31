@@ -587,7 +587,11 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     product:  { label: 'Product',  options: [['SM', 'Scholarship Management'], ['DM', 'Donor Management']] },
     type:     { label: 'Type',     options: [['shots', 'Shots'], ['content', 'Content']] },
     section:  { label: 'Section',  options: struct.sections.map(function (s) { return [s.name, s.name]; }) },
-    status:   { label: 'Status',   options: STATUS_ORDER.map(function (k) { return [k, STATUS_META[k].label]; }) },
+    // 'out-of-scope' (the DM badge) is deliberately excluded from the Status filter's
+    // own option list - which product a row belongs to is the Product axis's job now,
+    // not Status's. STATUS_META still defines it, since a visible DM row still needs
+    // its "DM" badge rendered - it's just not something you filter Status by any more.
+    status:   { label: 'Status',   options: STATUS_ORDER.filter(function (k) { return k !== 'out-of-scope'; }).map(function (k) { return [k, STATUS_META[k].label]; }) },
     campaign: { label: 'Campaign', options: [['overhaul', 'Overhaul'], ['release', 'New Release']] },
   };
 
