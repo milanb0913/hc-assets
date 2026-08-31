@@ -66,6 +66,8 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
 .status-fail { background: var(--fail-soft); color: var(--fail); }
 .status-pending { background: var(--surface-sunken); color: var(--muted); }
 .status-awaiting { background: var(--pending-soft); color: var(--pending); }
+.status-frozen { background: var(--surface-sunken); color: var(--muted); }
+.status-blocked { background: var(--fail-soft); color: var(--fail); }
 .frames { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .frame { margin: 0; display: flex; flex-direction: column; gap: 8px; }
 .frame-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
@@ -123,7 +125,7 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
   <p class="intro">Legacy vs. current for every shot in this article. Click Pass or Fail to record a verdict, or add a note — both are saved to the shared review sheet immediately.</p>
   <div id="cards" class="cards"></div>
 </main>
-<script id="data-shots" type="application/json">[{"id":"nvn-01-import-exception-source-file","legacy":null,"new_":"https://milanb0913.github.io/hc-assets/staging/PROD_SM_SHARED_ImportSummary-SourceFileDownload.png","caption":""}]</script>
+<script id="data-shots" type="application/json">[{"id":"nvn-01-import-exception-source-file","legacy":null,"new_":"https://milanb0913.github.io/hc-assets/staging/PROD_SM_SHARED_ImportSummary-SourceFileDownload.png","caption":"","dueForCapture":true,"doNotRecapture":false,"notAScreenshot":false,"blockedForTeam":false,"blockedReason":null}]</script>
 <script id="data-meta" type="application/json">{"articleId":"15706648","articleTitle":"Not a Valid Number","docTitle":"Not a Valid Number — Shot Review","intro":"Legacy vs. current for every shot in this article. Click Pass or Fail to record a verdict, or add a note — both are saved to the shared review sheet immediately.","syncEndpoint":"https://script.google.com/macros/s/AKfycbwlQAH9fZwBYpNUOXoDvnP53Yodv8APLAoWdgmNEfKfBLSwIK4MsE3KtJ3igxExw5H8/exec","hubUrl":"../index.html","hcUrl":"https://intercom.help/awardspringsupport/en-us/articles/15706648-not-a-valid-number"}</script>
 <script id="render-script">// Client-side runtime for the STATIC (GitHub Pages) per-article shot-review
 // page. Sibling of review-doc-client.js (the claude.ai Artifact version) —
@@ -192,11 +194,32 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
     return { pass: pass, fail: fail, neutral: neutral, newCount: newCount, oldCount: shots.length - newCount };
   }
 
+  // Why a shot has no "new" capture is a different fact from IF it's due -
+  // showing "Not captured yet" for a shot that's frozen, not-a-screenshot, or
+  // blocked on a team dependency reads as an open gap when it isn't one.
+  function notCapturedReason(s) {
+    if (s.blockedForTeam) return 'Blocked — team needed' + (s.blockedReason ? ': ' + s.blockedReason : '');
+    if (s.notAScreenshot) return 'Not a screenshot — not real product UI';
+    if (s.doNotRecapture) return 'Frozen — live image confirmed current, not being recaptured';
+    if (s.dueForCapture === false) return 'Not due this round';
+    return 'Not captured yet';
+  }
+
+  // Short form for the header pill — the full reason (incl. blockedReason,
+  // which can run long) goes in the image placeholder via notCapturedReason.
+  function notCapturedLabel(s) {
+    if (s.blockedForTeam) return 'Blocked';
+    if (s.notAScreenshot) return 'Not a screenshot';
+    if (s.doNotRecapture) return 'Frozen';
+    if (s.dueForCapture === false) return 'Not due';
+    return 'Awaiting capture';
+  }
+
   function newFrame(s) {
     if (s.new_) {
       return '<div class="imgwrap"><img src="' + esc(s.new_) + '" alt="' + esc(s.id) + ' current" loading="lazy"></div>';
     }
-    return '<div class="imgwrap awaiting"><div class="awaiting-msg">Not captured yet</div></div>';
+    return '<div class="imgwrap awaiting"><div class="awaiting-msg">' + esc(notCapturedReason(s)) + '</div></div>';
   }
 
   function otherReviewsHtml(s) {
@@ -215,8 +238,9 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
     var mine = myRow(s.id);
     var v = mine ? mine.verdict : null;
     var n = mine ? (mine.note || '') : '';
-    var statusClass = !s.new_ ? 'status-awaiting' : v === 'pass' ? 'status-pass' : v === 'fail' ? 'status-fail' : 'status-pending';
-    var statusLabel = !s.new_ ? 'Awaiting capture' : v === 'pass' ? 'Pass (you)' : v === 'fail' ? 'Fail (you)' : 'Unreviewed';
+    var notCapturedClass = s.blockedForTeam ? 'status-blocked' : (s.notAScreenshot || s.doNotRecapture) ? 'status-frozen' : 'status-awaiting';
+    var statusClass = !s.new_ ? notCapturedClass : v === 'pass' ? 'status-pass' : v === 'fail' ? 'status-fail' : 'status-pending';
+    var statusLabel = !s.new_ ? notCapturedLabel(s) : v === 'pass' ? 'Pass (you)' : v === 'fail' ? 'Fail (you)' : 'Unreviewed';
     return (
       '<article class="pair" id="shot-' + esc(s.id) + '">' +
         '<header class="pair-head">' +
