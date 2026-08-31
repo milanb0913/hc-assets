@@ -311,13 +311,24 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
     el.classList.toggle('save-status-error', !!isError);
   }
 
+  // 2026-08-31: a reviewer who never noticed the "Reviewing as" box (top-right,
+  // position:static, scrolls out of view past shot #1) got a fully silent
+  // no-op on every Pass/Fail click - the error text landed in that same
+  // off-screen corner, so nothing ever posted and nothing ever looked wrong.
+  // A blocking prompt() can't be missed regardless of scroll position, and it
+  // only fires once per browser since the name then persists to localStorage.
   function ensureReviewerName() {
     var name = getReviewerName();
     if (name) return name;
+    name = (window.prompt('Enter your name to record a verdict (saved on this device, asked once):') || '').trim();
+    if (!name) {
+      setSyncStatus('Enter your name to record a verdict', true);
+      return null;
+    }
+    setReviewerName(name);
     var input = document.getElementById('reviewer-name');
-    if (input) input.focus();
-    setSyncStatus('Enter your name above before recording a verdict', true);
-    return null;
+    if (input) input.value = name;
+    return name;
   }
 
   // Apps Script Web Apps do not answer CORS preflight (OPTIONS) requests
