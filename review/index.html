@@ -517,6 +517,18 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     return anchors + sectionsHtml + otherSection;
   }
 
+  // Fixed 2026-08-31 (Milan caught it live: "88/107" vs the filter bar's "showing 90 of
+  // 160" didn't reconcile). Two separate bugs were stacked:
+  // 1. inScope used to skip any article without a manifest or with due===0 entirely -
+  //    silently dropping 53 real SM articles (No Shot/Not Started/Nothing Due) from its
+  //    own denominator, while the filter bar's "of 160" counts all of them. Same
+  //    undercount-the-backlog shape this project has hit before.
+  // 2. "articlesReady" meant "fully captured", NOT "Ready to Publish" - it counted an
+  //    article as ready even with real Fails or unreviewed shots sitting in it. Of the
+  //    88 it used to report, only 17 were genuinely Ready to Publish; the other 71 were
+  //    fully-captured-but-flagged, which is exactly what surfaced when filtering to
+  //    Has Fails/Needs Review. Fixed by reusing computeStatus() - the SAME thing the row
+  //    badges already compute - instead of a second, looser definition living only here.
   function computeHeadlineCounts() {
     var counts = { 'blocked': 0, 'has-fails': 0, 'needs-review': 0, 'ready': 0 };
     var inScope = 0;
@@ -524,17 +536,18 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     function tally(id) {
       if (dmIds[id]) return; // headline/sidebar stay DM-excluded by default, same as the row list
       var a = statusById[id];
-      if (!a || !a.hasManifest) return;
-      var due = a.dueShots || 0;
-      if (due === 0) return;
+      if (!a) return;
       inScope++;
+      var due = a.dueShots || 0;
       var dueShipped = a.dueShippedCount || 0;
-      dueShotsTotal += due;
-      dueShotsShipped += dueShipped;
-      if (dueShipped >= due) articlesReady++;
+      if (a.hasManifest && due > 0) { dueShotsTotal += due; dueShotsShipped += dueShipped; }
       var c = countsFor(a);
       var status = computeStatus(a, c);
       if (counts[status] !== undefined) counts[status]++;
+      // No Shot and Nothing Due are trivially ready - nothing exists to review, same
+      // reasoning as the rest of this model (a confirmed-frozen or image-less article
+      // isn't "behind," it's done).
+      if (status === 'ready' || status === 'no-shots' || status === 'no-due-shots') articlesReady++;
     }
     struct.sections.forEach(function (sec) { sec.subsections.forEach(function (sub) { sub.articles.forEach(tally); }); });
     unmapped.forEach(function (a) { tally(a.id); });
