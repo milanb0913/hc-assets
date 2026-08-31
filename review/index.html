@@ -120,16 +120,31 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
 .jump { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; }
 .jump a { font-size: 0.76rem; color: var(--ink-soft); text-decoration: none; font-family: 'IBM Plex Mono', monospace; }
 .jump a:hover { color: var(--accent); }
-.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
-.filters .filters-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
-.filter-chip {
-  display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--ink-soft);
-  background: var(--surface-sunken); border: 1.5px solid var(--border); border-radius: 100px;
-  padding: 5px 12px 5px 8px; cursor: pointer; user-select: none; transition: border-color 0.12s, color 0.12s;
+.hc-section.filter-hidden, .subsection.filter-hidden, .row.filter-hidden { display: none !important; }
+
+/* ---- Filters bar: a button + applied-filter chips, modeled on the real
+   AwardSpring Task Board (2026-08-31 rebuild) - replaces three always-visible
+   checkbox rows that read as clutter before any content. ---- */
+.filters-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+.filters-btn {
+  display: inline-flex; align-items: center; gap: 7px; font-family: inherit; font-size: 0.84rem; font-weight: 600;
+  color: var(--ink); background: var(--surface-sunken); border: 1.5px solid var(--border); border-radius: 100px;
+  padding: 7px 16px; cursor: pointer;
 }
-.filter-chip:hover { border-color: var(--muted); }
-.filter-chip input { accent-color: var(--accent); width: 14px; height: 14px; margin: 0; cursor: pointer; }
-.filter-chip.active { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.filters-btn:hover { border-color: var(--accent); }
+.filters-count-badge { background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 700; border-radius: 100px; padding: 1px 8px; }
+.applied-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.applied-chip {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--ink-soft);
+  background: var(--accent-soft); border: 1.5px solid var(--accent); border-radius: 100px; padding: 5px 6px 5px 12px;
+}
+.applied-chip b { color: var(--ink); font-weight: 600; }
+.applied-chip button { background: none; border: none; cursor: pointer; font-size: 0.82rem; color: var(--ink-soft); padding: 2px 4px; line-height: 1; }
+.applied-chip button:hover { color: var(--accent); }
+.reset-filters-btn {
+  font-family: inherit; font-size: 0.8rem; font-weight: 600; color: var(--ink-soft); background: none;
+  border: none; text-decoration: underline; cursor: pointer; padding: 4px;
+}
 .assignee-filter, .search-input {
   font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.82rem; color: var(--ink);
   background: var(--surface-sunken); border: 1.5px solid var(--border); border-radius: 100px;
@@ -139,64 +154,90 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
 .assignee-filter:focus, .search-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
 .search-input::placeholder { color: var(--muted); }
 .filter-count { font-size: 0.78rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; margin-left: auto; }
-.hc-section.filter-hidden, .subsection.filter-hidden, .row.filter-hidden { display: none !important; }
-.filters-scope, .filters-sections { border-top: none; padding-top: 0; margin-top: 8px; }
-.scope-chip.active { border-color: var(--accent); color: var(--accent); font-weight: 600; }
-.section-chip { opacity: 0.55; }
-.section-chip.active { opacity: 1; border-color: var(--muted); }
-.section-toggle-all {
-  font-family: inherit; font-size: 0.76rem; font-weight: 600; color: var(--ink-soft);
-  background: none; border: none; text-decoration: underline; cursor: pointer; padding: 4px 4px;
+
+/* ---- Filters modal ---- */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(20, 22, 28, 0.5); z-index: 20;
+  align-items: flex-start; justify-content: center; padding: 8vh 20px;
+  display: none;
 }
+.modal-overlay:not([hidden]) { display: flex; }
+.modal {
+  background: var(--surface); border-radius: 12px; width: min(640px, 100%); max-height: 80vh; overflow-y: auto;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3); display: flex; flex-direction: column;
+}
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between; padding: 18px 24px;
+  border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface);
+}
+.modal-head h3 { font-family: 'Source Serif 4', Georgia, serif; font-size: 1.2rem; margin: 0; }
+.modal-head button { font-family: inherit; font-size: 0.85rem; color: var(--accent); background: none; border: none; cursor: pointer; font-weight: 600; }
+.modal-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.modal-create { padding: 20px 24px; border-right: 1px solid var(--border); }
+.modal-applied-panel { padding: 20px 24px; }
+.modal-create h4, .modal-applied-panel h4 { font-size: 0.92rem; margin: 0 0 12px; }
+.modal-create label { display: block; font-size: 0.82rem; color: var(--ink-soft); margin-bottom: 6px; }
+.modal-create select, .modal-values select {
+  width: 100%; font-family: inherit; font-size: 0.86rem; color: var(--ink); background: var(--surface-sunken);
+  border: 1.5px solid var(--border); border-radius: 7px; padding: 8px 10px;
+}
+.modal-values { margin-top: 14px; display: flex; flex-direction: column; gap: 9px; max-height: 260px; overflow-y: auto; }
+.modal-check { display: flex; align-items: center; gap: 9px; font-size: 0.86rem; color: var(--ink); cursor: pointer; }
+.modal-check input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+.modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+.btn-primary, .btn-secondary {
+  font-family: inherit; font-size: 0.84rem; font-weight: 600; border-radius: 7px; padding: 8px 18px; cursor: pointer;
+}
+.btn-primary { background: var(--accent); color: #fff; border: 1.5px solid var(--accent); }
+.btn-secondary { background: var(--surface); color: var(--ink-soft); border: 1.5px solid var(--border); }
+.modal-empty { color: var(--muted); font-size: 0.84rem; }
+.modal-applied-row { font-size: 0.86rem; color: var(--ink-soft); padding: 8px 0; border-bottom: 1px dashed var(--border); }
+.modal-applied-row b { color: var(--ink); }
+.modal-foot { display: flex; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--border); position: sticky; bottom: 0; background: var(--surface); }
+@media (max-width: 600px) { .modal-body { grid-template-columns: 1fr; } .modal-create { border-right: none; border-bottom: 1px solid var(--border); } }
+
+.content-gate {
+  background: var(--surface); border: 1.5px dashed var(--border); border-radius: 10px;
+  padding: 40px 30px; text-align: center; max-width: 60ch; margin: 40px auto;
+}
+.content-gate h3 { font-family: 'Source Serif 4', Georgia, serif; margin: 0 0 10px; }
+.content-gate p { color: var(--muted); font-size: 0.9rem; margin: 0; }
 </style>
 <div class="masthead">
   <h1>HC Capture — Shot Review</h1>
   <div id="headline" class="hero-stats"></div>
   <span id="sync-status" class="sync-status"></span>
   <nav class="jump" id="jump"></nav>
-  <div class="filters" id="filters">
-    <span class="filters-label">Status</span>
-    <label class="filter-chip"><input type="checkbox" data-status-filter="has-fails"> Has Fails</label>
-    <label class="filter-chip"><input type="checkbox" data-status-filter="needs-review"> Needs Review</label>
-    <label class="filter-chip"><input type="checkbox" data-status-filter="not-ready"> In Progress</label>
-    <label class="filter-chip"><input type="checkbox" data-status-filter="ready"> Ready to Publish</label>
-    <label class="filter-chip"><input type="checkbox" data-status-filter="no-due-shots"> Nothing Due</label>
-    <label class="filter-chip"><input type="checkbox" data-status-filter="no-data"> Not Started</label>
-    <label class="filter-chip"><input type="checkbox" data-status-filter="no-shots"> No Shot</label>
+  <div class="filters-bar">
+    <button type="button" id="open-filters-btn" class="filters-btn"><span id="filters-btn-label">Filters</span></button>
+    <div class="applied-filters" id="applied-filters"></div>
     <select id="assignee-filter" class="assignee-filter"><option value="">Anyone</option><option value="__unassigned__">Unassigned</option><option value="MB"><option value="SL"></select>
     <input type="text" id="search-input" class="search-input" placeholder="Search title or #id...">
     <span class="filter-count" id="filter-count"></span>
   </div>
-  <div class="filters filters-scope" id="filters-scope">
-    <span class="filters-label">Scope</span>
-    <label class="filter-chip scope-chip active"><input type="checkbox" id="scope-sm-filter" checked> Scholarship Management</label>
-    <label class="filter-chip scope-chip"><input type="checkbox" id="scope-dm-filter"> Donor Management</label>
-  </div>
-  <div class="filters filters-sections" id="filters-sections">
-    <span class="filters-label">Sections</span>
-    <label class="filter-chip section-chip active"><input type="checkbox" data-section-filter="Tutorials" checked> Tutorials</label>
-    <label class="filter-chip section-chip active"><input type="checkbox" data-section-filter="Scholarships" checked> Scholarships</label>
-    <label class="filter-chip section-chip active"><input type="checkbox" data-section-filter="Users" checked> Users</label>
-    <label class="filter-chip section-chip active"><input type="checkbox" data-section-filter="Review Groups" checked> Review Groups</label>
-    <label class="filter-chip section-chip active"><input type="checkbox" data-section-filter="Reports" checked> Reports</label>
-    <label class="filter-chip section-chip active"><input type="checkbox" data-section-filter="Application" checked> Application</label>
-    <label class="filter-chip section-chip active"><input type="checkbox" data-section-filter="Awarding" checked> Awarding</label>
-    <label class="filter-chip section-chip active"><input type="checkbox" data-section-filter="Task Board" checked> Task Board</label>
-    <label class="filter-chip section-chip active"><input type="checkbox" data-section-filter="Communications" checked> Communications</label>
-    <label class="filter-chip section-chip active"><input type="checkbox" data-section-filter="Departments" checked> Departments</label>
-    <label class="filter-chip section-chip active"><input type="checkbox" data-section-filter="Donors" checked> Donors</label>
-    <label class="filter-chip section-chip active"><input type="checkbox" data-section-filter="SpringIQ" checked> SpringIQ</label>
-    <label class="filter-chip section-chip active"><input type="checkbox" data-section-filter="SpringAPIs" checked> SpringAPIs</label>
-    <label class="filter-chip section-chip active"><input type="checkbox" data-section-filter="Imports" checked> Imports</label>
-    <label class="filter-chip section-chip active"><input type="checkbox" data-section-filter="Settings" checked> Settings</label>
-    <label class="filter-chip section-chip active"><input type="checkbox" data-section-filter="Webinars" checked> Webinars</label>
-    <label class="filter-chip section-chip active"><input type="checkbox" data-section-filter="User Guides" checked> User Guides</label>
-    <label class="filter-chip section-chip active"><input type="checkbox" data-section-filter="FAQs" checked> FAQs</label>
-    <button type="button" class="section-toggle-all" id="sections-none">None</button>
-    <button type="button" class="section-toggle-all" id="sections-all">All</button>
-  </div>
 </div>
 <datalist id="assignee-list"><option value="MB"><option value="SL"></datalist>
+<div class="modal-overlay" id="filters-modal-overlay" hidden>
+  <div class="modal" id="filters-modal" role="dialog" aria-modal="true" aria-label="Filter Settings">
+    <div class="modal-head"><h3>Filter Settings</h3><button type="button" id="modal-close-btn">Cancel &amp; Close</button></div>
+    <div class="modal-body">
+      <div class="modal-create">
+        <h4>Create New Filter</h4>
+        <label for="filter-by-select">Filter by:</label>
+        <select id="filter-by-select"></select>
+        <div id="modal-values-wrap"></div>
+      </div>
+      <div class="modal-applied-panel">
+        <h4>Applied Filters (<span id="modal-applied-count">0</span>)</h4>
+        <div id="modal-applied-list"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" id="modal-save-btn" class="btn-primary">Save Filters</button>
+      <button type="button" id="modal-reset-btn" class="btn-secondary">Reset</button>
+    </div>
+  </div>
+</div>
 <div class="layout">
   <aside class="sidebar" id="sidebar"><div id="sidebar-stats"></div></aside>
   <main id="main-content"></main>
@@ -224,6 +265,13 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
 //      fresh GET of the review-sync.gs Sheet (data-sync-endpoint) instead of
 //      read from registry.articles[id].counts - removing the whole
 //      "registry counts never gets refreshed" bug class.
+//
+// 2026-08-31 (later): filters rebuilt as a Filters button + modal (Product /
+// Type / Section / Status, each its own dimension, applied filters shown as
+// removable/editable chips) - modeled directly on AwardSpring's own Task
+// Board filter UI, walked live in Chrome before building this. Replaces the
+// old always-visible three-row checkbox bank, which read as "20 different
+// toggles" before any content.
 //
 // Assigned-to / notes / signed-off are shown READ-ONLY (last known values
 // from qa/review-doc-registry.json at build time) - there is no write-back
@@ -360,12 +408,18 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     } else if (due === 0) {
       progressChips = '<span class="chip chip-neutral">nothing due</span>';
     } else {
+      // QA collapsed to one fraction + a conditional fail count (2026-08-31, Milan:
+      // "combine pass/fail/unreviewed... into a simple 7/16 Passed"). Denominator is
+      // dueShipped, not due - Passed/Failed/Unreviewed only ever apply to shots that
+      // have actually been captured. Unreviewed stays implicit (dueShipped - pass -
+      // fail) rather than spelled out as its own chip; fail is the one number that's
+      // genuinely actionable, so it's the only thing that gets its own chip, and only
+      // when it's nonzero.
       progressChips = (
         '<span class="chip chip-progress">' + dueShipped + '/' + due + ' captured</span>' +
-        '<span class="chip chip-pass">' + c.pass + ' pass</span>' +
-        '<span class="chip chip-fail">' + c.fail + ' fail</span>' +
-        '<span class="chip chip-pending">' + c.neutral + ' unreviewed</span>'
+        '<span class="chip chip-pass">' + c.pass + '/' + dueShipped + ' Passed</span>'
       );
+      if (c.fail > 0) progressChips += '<span class="chip chip-fail">' + c.fail + ' failed</span>';
     }
     if (frozen > 0) progressChips += '<span class="chip chip-frozen" title="Permanently correct, never recaptured">' + frozen + ' frozen</span>';
 
@@ -391,7 +445,8 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
       '<div class="row-counts">' + progressChips + '</div>'
     );
     var collection = dmIds[id] ? 'DM' : 'SM';
-    var dataAttrs = 'data-status="' + status + '" data-assigned="' + esc(assignedVal) + '" data-collection="' + collection + '"';
+    // Every real row is 'overhaul' today - see the Campaign dimension's own comment above.
+    var dataAttrs = 'data-status="' + status + '" data-assigned="' + esc(assignedVal) + '" data-collection="' + collection + '" data-campaign="overhaul"';
     var linkHtml = relPath
       ? '<a class="row-link" href="' + esc(relPath) + '" target="_blank" rel="noopener">' + inner + '<span class="row-arrow">Open →</span></a>'
       : '<div class="row-link row-link-muted">' + inner + '<span class="row-arrow row-arrow-muted">Not built yet</span></div>';
@@ -401,7 +456,33 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
       '</div>';
   }
 
+  // A dimension whose "not real yet" value is selected ALONE (without its real
+  // counterpart) gets an honest empty-state instead of a silently-empty or
+  // silently-wrong row list. Both Type=Content and Campaign=New Release are
+  // this same shape today - genuine concepts, zero real data behind them yet.
+  var HONEST_GATES = [
+    { dim: 'type', soloValue: 'content', otherValue: 'shots',
+      title: 'Content tracking isn’t wired up yet',
+      body: 'There’s no real data source for article content/prose progress yet - nothing shown here would reflect actual work. Switch the Type filter back to Shots to see real status.' },
+    { dim: 'campaign', soloValue: 'release', otherValue: 'overhaul',
+      title: 'No articles are tagged to a specific release yet',
+      body: 'Every real row today is Overhaul work - release-driven capture/content hasn’t started landing here yet. Switch Campaign back to Overhaul (or clear it) to see real status.' },
+  ];
+  function gateMessage() {
+    for (var i = 0; i < HONEST_GATES.length; i++) {
+      var g = HONEST_GATES[i];
+      var vals = appliedFilters[g.dim];
+      if (vals.indexOf(g.soloValue) !== -1 && vals.indexOf(g.otherValue) === -1) {
+        return '<div class="content-gate"><h3>' + esc(g.title) + '</h3><p>' + esc(g.body) + '</p></div>';
+      }
+    }
+    return null;
+  }
+
   function buildMain() {
+    var gate = gateMessage();
+    if (gate) return gate;
+
     var sectionsHtml = struct.sections.map(function (sec) {
       var subsHtml = sec.subsections.map(function (sub) {
         var rows = sub.articles.map(articleRow).join('\n');
@@ -480,110 +561,271 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     return Object.keys(names).sort().map(function (n) { return '<option value="' + esc(n) + '">'; }).join('');
   }
 
-  // Filter state persists across visits (2026-08-31, Milan: "last set config
-  // persists until changed") - one localStorage blob, restored once before
-  // the first render and rewritten every time applyFilters runs. Wrapped in
-  // try/catch since a private window or blocked site data throws on access,
-  // and that must never break the page - it just means no persistence.
-  var STORAGE_KEY = 'hc-hub-filters-v1';
+  // ======================================================================
+  // Filters: Filters button + modal, one dimension at a time, applied
+  // filters shown as removable/editable chips. Rebuilt 2026-08-31 (Milan)
+  // to match AwardSpring's own Task Board filter UI - walked it live in
+  // Chrome first (Filter Settings > Create New Filter > Filter by > checkbox
+  // list > Apply Filter > Applied Filters chips > Save Filters / Reset) and
+  // confirmed: dimensions AND together, values within one dimension OR
+  // together, an applied dimension drops out of the "Filter by" list (edit
+  // via its own chip instead of re-adding it), Reset clears everything.
+  //
+  // A dimension with an EMPTY applied value list means "not filtering on
+  // this" (show everything) - simpler than the old always-visible-checkbox
+  // model, where an all-unchecked row meant "show nothing" for status but
+  // "show nothing" for sections too (inconsistent, fixed here).
+  // Campaign added 2026-08-31 (later) per Milan, directly closing the gap found
+  // this session: Overhaul-vs-Release has been a real conceptual split with no
+  // explicit field anywhere. Every article defaults to 'overhaul' below (see
+  // articleRow's data-campaign) because literally nothing is Release-tagged in
+  // the real data yet - same honest-placeholder shape as Type/Content: the
+  // option exists so the vocabulary is already familiar once real per-release
+  // tagging exists, rather than being a second UI change later.
+  var DIMENSION_ORDER = ['product', 'type', 'section', 'status', 'campaign'];
+  var DIMENSIONS = {
+    product:  { label: 'Product',  options: [['SM', 'Scholarship Management'], ['DM', 'Donor Management']] },
+    type:     { label: 'Type',     options: [['shots', 'Shots'], ['content', 'Content']] },
+    section:  { label: 'Section',  options: struct.sections.map(function (s) { return [s.name, s.name]; }) },
+    status:   { label: 'Status',   options: STATUS_ORDER.map(function (k) { return [k, STATUS_META[k].label]; }) },
+    campaign: { label: 'Campaign', options: [['overhaul', 'Overhaul'], ['release', 'New Release']] },
+  };
+
+  // appliedFilters: the live, in-effect filter state. draftFilters: a working
+  // copy edited inside the open modal, committed to appliedFilters only on
+  // "Save Filters" (or discarded on "Cancel & Close") - mirrors the real
+  // Task Board's own Apply-then-Save two-step exactly.
+  var appliedFilters = { product: ['SM'], type: [], section: [], status: [], campaign: [] };
+  var draftFilters = null;
+  var editingDimension = null; // which dimension "Filter by" currently shows values for, inside the modal
+
+  var STORAGE_KEY = 'hc-hub-filters-v2';
   function loadFilterState() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       return raw ? JSON.parse(raw) : null;
     } catch (e) { return null; }
   }
-  function saveFilterState(state) {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  function saveFilterState() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appliedFilters)); } catch (e) {}
   }
-  function restoreControlsFromState() {
+  function restoreFilterState() {
     var saved = loadFilterState();
-    if (!saved) return; // first visit - leave the server-rendered defaults as-is
-    var statusBoxes = Array.prototype.slice.call(document.querySelectorAll('#filters input[data-status-filter]'));
-    statusBoxes.forEach(function (cb) {
-      cb.checked = (saved.statuses || []).indexOf(cb.getAttribute('data-status-filter')) !== -1;
+    if (!saved) return; // first visit - keep the seeded default (Product: SM)
+    DIMENSION_ORDER.forEach(function (d) {
+      if (Array.isArray(saved[d])) appliedFilters[d] = saved[d];
     });
-    var smToggle = document.getElementById('scope-sm-filter');
-    if (smToggle && typeof saved.includeSM === 'boolean') smToggle.checked = saved.includeSM;
-    var dmToggle = document.getElementById('scope-dm-filter');
-    if (dmToggle && typeof saved.includeDM === 'boolean') dmToggle.checked = saved.includeDM;
-    var sectionBoxes = Array.prototype.slice.call(document.querySelectorAll('#filters-sections input[data-section-filter]'));
-    if (saved.sections) {
-      sectionBoxes.forEach(function (cb) {
-        cb.checked = saved.sections.indexOf(cb.getAttribute('data-section-filter')) !== -1;
-      });
-    }
-    var assigneeSelect = document.getElementById('assignee-filter');
-    if (assigneeSelect && typeof saved.assignee === 'string') assigneeSelect.value = saved.assignee;
-    var searchInput = document.getElementById('search-input');
-    if (searchInput && typeof saved.q === 'string') searchInput.value = saved.q;
   }
 
-  function rowMatches(row, state) {
+  function optionLabel(dim, value) {
+    var opt = DIMENSIONS[dim].options.filter(function (o) { return o[0] === value; })[0];
+    return opt ? opt[1] : value;
+  }
+
+  function appliedChipsHtml() {
+    var chips = DIMENSION_ORDER.filter(function (d) { return appliedFilters[d] && appliedFilters[d].length; }).map(function (d) {
+      var labels = appliedFilters[d].map(function (v) { return optionLabel(d, v); }).join(', ');
+      return '<span class="applied-chip">' +
+        '<button type="button" class="chip-edit" data-dim="' + d + '" title="Edit ' + esc(DIMENSIONS[d].label) + '">✎</button>' +
+        '<b>' + esc(DIMENSIONS[d].label) + ':</b> ' + esc(labels) +
+        '<button type="button" class="chip-remove" data-dim="' + d + '" title="Remove">✕</button>' +
+      '</span>';
+    }).join('');
+    var anyApplied = DIMENSION_ORDER.some(function (d) { return appliedFilters[d] && appliedFilters[d].length; });
+    var resetBtn = anyApplied ? '<button type="button" id="reset-filters-btn" class="reset-filters-btn">Reset filters</button>' : '';
+    return chips + resetBtn;
+  }
+
+  function filtersButtonHtml() {
+    var count = DIMENSION_ORDER.filter(function (d) { return appliedFilters[d] && appliedFilters[d].length; }).length;
+    return 'Filters' + (count ? ' <span class="filters-count-badge">' + count + '</span>' : '');
+  }
+
+  function modalFilterByOptionsHtml() {
+    var available = DIMENSION_ORDER.filter(function (d) { return !(draftFilters[d] && draftFilters[d].length); });
+    return '<option value="">Select from list</option>' + available.map(function (d) {
+      return '<option value="' + d + '"' + (editingDimension === d ? ' selected' : '') + '>' + esc(DIMENSIONS[d].label) + '</option>';
+    }).join('');
+  }
+
+  function modalValuesHtml() {
+    if (!editingDimension) return '';
+    var dim = editingDimension;
+    var current = draftFilters[dim] || [];
+    var boxes = DIMENSIONS[dim].options.map(function (o) {
+      var checked = current.indexOf(o[0]) !== -1 ? ' checked' : '';
+      return '<label class="modal-check"><input type="checkbox" data-value="' + esc(o[0]) + '"' + checked + '> ' + esc(o[1]) + '</label>';
+    }).join('');
+    return '<div class="modal-values">' + boxes + '</div>' +
+      '<div class="modal-actions"><button type="button" id="apply-filter-btn" class="btn-primary">Apply Filter</button>' +
+      '<button type="button" id="cancel-filter-btn" class="btn-secondary">Cancel</button></div>';
+  }
+
+  function modalAppliedHtml() {
+    var dims = DIMENSION_ORDER.filter(function (d) { return draftFilters[d] && draftFilters[d].length; });
+    if (!dims.length) return '<p class="modal-empty">No filters applied yet.</p>';
+    return dims.map(function (d) {
+      var labels = draftFilters[d].map(function (v) { return optionLabel(d, v); }).join(', ');
+      return '<div class="modal-applied-row"><b>' + esc(DIMENSIONS[d].label) + ':</b> ' + esc(labels) + '</div>';
+    }).join('');
+  }
+
+  function renderModal() {
+    var modal = document.getElementById('filters-modal');
+    if (!modal) return;
+    document.getElementById('filter-by-select').innerHTML = modalFilterByOptionsHtml();
+    document.getElementById('filter-by-select').value = editingDimension || '';
+    document.getElementById('modal-values-wrap').innerHTML = modalValuesHtml();
+    var appliedCountEls = document.querySelectorAll('#modal-applied-count');
+    var count = DIMENSION_ORDER.filter(function (d) { return draftFilters[d] && draftFilters[d].length; }).length;
+    Array.prototype.forEach.call(appliedCountEls, function (el) { el.textContent = count; });
+    document.getElementById('modal-applied-list').innerHTML = modalAppliedHtml();
+    wireModalValueCheckboxes();
+  }
+
+  function openModal() {
+    draftFilters = {};
+    DIMENSION_ORDER.forEach(function (d) { draftFilters[d] = appliedFilters[d].slice(); });
+    editingDimension = null;
+    document.getElementById('filters-modal-overlay').hidden = false;
+    renderModal();
+  }
+  function closeModal() {
+    document.getElementById('filters-modal-overlay').hidden = true;
+    draftFilters = null;
+    editingDimension = null;
+  }
+
+  function wireModalValueCheckboxes() {
+    var wrap = document.getElementById('modal-values-wrap');
+    if (!wrap) return;
+    Array.prototype.forEach.call(wrap.querySelectorAll('input[type="checkbox"][data-value]'), function (cb) {
+      cb.addEventListener('change', function () {
+        if (!editingDimension) return;
+        var list = draftFilters[editingDimension] || [];
+        var v = cb.getAttribute('data-value');
+        var idx = list.indexOf(v);
+        if (cb.checked && idx === -1) list.push(v);
+        if (!cb.checked && idx !== -1) list.splice(idx, 1);
+        draftFilters[editingDimension] = list;
+      });
+    });
+    var applyBtn = document.getElementById('apply-filter-btn');
+    if (applyBtn) applyBtn.addEventListener('click', function () {
+      editingDimension = null;
+      renderModal();
+    });
+    var cancelBtn = document.getElementById('cancel-filter-btn');
+    if (cancelBtn) cancelBtn.addEventListener('click', function () {
+      editingDimension = null;
+      renderModal();
+    });
+  }
+
+  var modalControlsWired = false;
+  function wireModalControls() {
+    if (modalControlsWired) return;
+    modalControlsWired = true;
+    document.getElementById('open-filters-btn').addEventListener('click', openModal);
+    document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+    document.getElementById('filters-modal-overlay').addEventListener('click', function (e) {
+      if (e.target.id === 'filters-modal-overlay') closeModal();
+    });
+    document.getElementById('filter-by-select').addEventListener('change', function () {
+      editingDimension = this.value || null;
+      renderModal();
+    });
+    document.getElementById('modal-save-btn').addEventListener('click', function () {
+      DIMENSION_ORDER.forEach(function (d) { appliedFilters[d] = (draftFilters[d] || []).slice(); });
+      saveFilterState();
+      closeModal();
+      applyFilters();
+    });
+    document.getElementById('modal-reset-btn').addEventListener('click', function () {
+      DIMENSION_ORDER.forEach(function (d) { draftFilters[d] = []; });
+      editingDimension = null;
+      renderModal();
+    });
+    document.body.addEventListener('click', function (e) {
+      var editBtn = e.target.closest && e.target.closest('.chip-edit');
+      if (editBtn) {
+        openModal();
+        editingDimension = editBtn.getAttribute('data-dim');
+        renderModal();
+        return;
+      }
+      var removeBtn = e.target.closest && e.target.closest('.chip-remove');
+      if (removeBtn) {
+        appliedFilters[removeBtn.getAttribute('data-dim')] = [];
+        saveFilterState();
+        applyFilters();
+        return;
+      }
+      if (e.target.id === 'reset-filters-btn') {
+        DIMENSION_ORDER.forEach(function (d) { appliedFilters[d] = []; });
+        saveFilterState();
+        applyFilters();
+      }
+    });
+    var assigneeSelect = document.getElementById('assignee-filter');
+    if (assigneeSelect) assigneeSelect.addEventListener('change', applyFilters);
+    var searchInput = document.getElementById('search-input');
+    if (searchInput) searchInput.addEventListener('input', applyFilters);
+  }
+
+  function rowMatches(row) {
     var status = row.getAttribute('data-status');
-    if (state.statuses.length && state.statuses.indexOf(status) === -1) return false;
-    if (state.assignee) {
+    if (appliedFilters.status.length && appliedFilters.status.indexOf(status) === -1) return false;
+    var assigneeSelect = document.getElementById('assignee-filter');
+    var assignee = assigneeSelect ? assigneeSelect.value : '';
+    if (assignee) {
       var rowAssignee = row.getAttribute('data-assigned') || '';
-      if (state.assignee === '__unassigned__' ? rowAssignee !== '' : rowAssignee !== state.assignee) return false;
+      if (assignee === '__unassigned__' ? rowAssignee !== '' : rowAssignee !== assignee) return false;
     }
-    if (state.q) {
+    var searchInput = document.getElementById('search-input');
+    var q = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    if (q) {
       var titleEl = row.querySelector('.row-title');
       var idEl = row.querySelector('.row-id');
       var text = ((titleEl ? titleEl.textContent : '') + ' ' + (idEl ? idEl.textContent : '')).toLowerCase();
-      if (text.indexOf(state.q) === -1) return false;
+      if (text.indexOf(q) === -1) return false;
     }
     return true;
   }
 
   function applyFilters() {
-    var statusBoxes = Array.prototype.slice.call(document.querySelectorAll('#filters input[data-status-filter]'));
-    var statuses = [];
-    statusBoxes.forEach(function (cb) {
-      cb.closest('.filter-chip').classList.toggle('active', cb.checked);
-      if (cb.checked) statuses.push(cb.getAttribute('data-status-filter'));
-    });
-    var assigneeSelect = document.getElementById('assignee-filter');
-    var assignee = assigneeSelect ? assigneeSelect.value : '';
-    var searchInput = document.getElementById('search-input');
-    var q = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    document.getElementById('filters-btn-label').innerHTML = filtersButtonHtml();
+    document.getElementById('applied-filters').innerHTML = appliedChipsHtml();
 
-    // Scope: Scholarship Management and Donor Management are two independent
-    // toggles now, not one default-off DM checkbox (2026-08-31, Milan) - each
-    // can be shown/hidden on its own, symmetric with each other.
-    var smToggle = document.getElementById('scope-sm-filter');
-    var dmToggle = document.getElementById('scope-dm-filter');
-    var includeSM = smToggle ? smToggle.checked : true;
-    var includeDM = dmToggle ? dmToggle.checked : false;
-    if (smToggle) smToggle.closest('.filter-chip').classList.toggle('active', includeSM);
-    if (dmToggle) dmToggle.closest('.filter-chip').classList.toggle('active', includeDM);
+    // An honest gate (Type=Content alone, or Campaign=New Release alone) rebuilds
+    // #main-content entirely (see buildMain) - when one's active there are no
+    // .row elements to filter at all.
+    document.getElementById('main-content').innerHTML = buildMain();
+    if (gateMessage()) {
+      document.getElementById('filter-count').textContent = '';
+      return;
+    }
 
-    var state = { statuses: statuses, assignee: assignee, q: q };
-    var anyActive = statuses.length > 0 || !!assignee || !!q;
-
-    // Sections filter is its own AND-condition, independent of anyActive -
-    // unchecking a section hides it even with no status/search filter applied.
-    var sectionBoxes = Array.prototype.slice.call(document.querySelectorAll('#filters-sections input[data-section-filter]'));
-    var activeSections = {};
-    var anySectionChecked = false;
-    var checkedSections = [];
-    sectionBoxes.forEach(function (cb) {
-      cb.closest('.filter-chip').classList.toggle('active', cb.checked);
-      if (cb.checked) {
-        activeSections[cb.getAttribute('data-section-filter')] = true;
-        anySectionChecked = true;
-        checkedSections.push(cb.getAttribute('data-section-filter'));
-      }
-    });
+    // Symmetric with every other dimension: no Product filter applied at all means
+    // show both, same as "no Section filter" shows every section. DM only actually
+    // hides once Product is explicitly narrowed to SM - found via testing that Reset
+    // left DM hidden with a "showing 160 of 160" count that quietly excluded it,
+    // which is exactly the kind of silently-wrong-count bug this project keeps re-finding.
+    var includeSM = !appliedFilters.product.length || appliedFilters.product.indexOf('SM') !== -1;
+    var includeDM = !appliedFilters.product.length || appliedFilters.product.indexOf('DM') !== -1;
+    var sectionFilterActive = appliedFilters.section.length > 0;
+    var campaignFilterActive = appliedFilters.campaign.length > 0;
 
     var allRows = Array.prototype.slice.call(document.querySelectorAll('.row[data-status]'));
     var visible = 0;
     allRows.forEach(function (row) {
       var sectionEl = row.closest('.hc-section');
       var sectionName = sectionEl ? sectionEl.getAttribute('data-section') : null;
-      var sectionOk = !sectionName || (anySectionChecked && activeSections[sectionName]);
+      var sectionOk = !sectionName || !sectionFilterActive || appliedFilters.section.indexOf(sectionName) !== -1;
       var collection = row.getAttribute('data-collection');
       var scopeOk = collection === 'DM' ? includeDM : includeSM;
-      var statusOk = !anyActive || rowMatches(row, state);
-      var show = sectionOk && scopeOk && statusOk;
+      var campaignOk = !campaignFilterActive || appliedFilters.campaign.indexOf(row.getAttribute('data-campaign')) !== -1;
+      var show = sectionOk && scopeOk && campaignOk && rowMatches(row);
       row.classList.toggle('filter-hidden', !show);
       if (show) visible++;
     });
@@ -596,33 +838,8 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
       sec.classList.toggle('filter-hidden', !anyVisible);
     });
     var countEl = document.getElementById('filter-count');
-    var totalSelectable = allRows.filter(function (r) {
-      return r.getAttribute('data-collection') === 'DM' ? includeDM : includeSM;
-    }).length;
-    countEl && (countEl.textContent = 'showing ' + visible + ' of ' + totalSelectable + ' articles');
-
-    saveFilterState({ statuses: statuses, includeSM: includeSM, includeDM: includeDM, sections: checkedSections, assignee: assignee, q: searchInput ? searchInput.value : '' });
-  }
-
-  var filterControlsWired = false;
-  function wireFilterControls() {
-    if (filterControlsWired) return;
-    filterControlsWired = true;
-    Array.prototype.forEach.call(document.querySelectorAll('#filters input[data-status-filter]'), function (cb) { cb.addEventListener('change', applyFilters); });
-    var assigneeSelect = document.getElementById('assignee-filter');
-    if (assigneeSelect) assigneeSelect.addEventListener('change', applyFilters);
-    var searchInput = document.getElementById('search-input');
-    if (searchInput) searchInput.addEventListener('input', applyFilters);
-    var smToggle = document.getElementById('scope-sm-filter');
-    if (smToggle) smToggle.addEventListener('change', applyFilters);
-    var dmToggle = document.getElementById('scope-dm-filter');
-    if (dmToggle) dmToggle.addEventListener('change', applyFilters);
-    var sectionBoxes = Array.prototype.slice.call(document.querySelectorAll('#filters-sections input[data-section-filter]'));
-    sectionBoxes.forEach(function (cb) { cb.addEventListener('change', applyFilters); });
-    var noneBtn = document.getElementById('sections-none');
-    var allBtn = document.getElementById('sections-all');
-    if (noneBtn) noneBtn.addEventListener('click', function () { sectionBoxes.forEach(function (cb) { cb.checked = false; }); applyFilters(); });
-    if (allBtn) allBtn.addEventListener('click', function () { sectionBoxes.forEach(function (cb) { cb.checked = true; }); applyFilters(); });
+    var totalSelectable = allRows.filter(function (r) { return r.getAttribute('data-collection') === 'DM' ? includeDM : includeSM; }).length;
+    if (countEl) countEl.textContent = 'showing ' + visible + ' of ' + totalSelectable + ' articles';
   }
 
   function setSyncStatus(text, isError) {
@@ -645,8 +862,7 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
       assigneeSelect.innerHTML = '<option value="">Anyone</option><option value="__unassigned__">Unassigned</option>' + assigneeOptionsHtml();
       assigneeSelect.value = current;
     }
-    document.getElementById('main-content').innerHTML = buildMain();
-    wireFilterControls();
+    wireModalControls();
     applyFilters();
   }
 
@@ -703,7 +919,7 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
       });
   }
 
-  restoreControlsFromState();
+  restoreFilterState();
   render();
   loadSyncCounts();
 })();
