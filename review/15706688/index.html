@@ -222,6 +222,13 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
     return '<div class="imgwrap awaiting"><div class="awaiting-msg">' + esc(notCapturedReason(s)) + '</div></div>';
   }
 
+  function oldFrame(s) {
+    if (s.legacy) {
+      return '<div class="imgwrap"><img src="' + esc(s.legacy) + '" alt="' + esc(s.id) + ' legacy" loading="lazy"></div>';
+    }
+    return '<div class="imgwrap awaiting"><div class="awaiting-msg">No legacy image - this is a new addition, not a recapture.</div></div>';
+  }
+
   function otherReviewsHtml(s) {
     var others = otherRows(s.id);
     if (!others.length) return '';
@@ -253,7 +260,7 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
         '<div class="frames">' +
           '<figure class="frame frame-old">' +
             '<div class="frame-label">Before <span>legacy</span></div>' +
-            '<div class="imgwrap"><img src="' + esc(s.legacy) + '" alt="' + esc(s.id) + ' legacy" loading="lazy"></div>' +
+            oldFrame(s) +
           '</figure>' +
           '<figure class="frame frame-new">' +
             '<div class="frame-label">After <span>current</span></div>' +
