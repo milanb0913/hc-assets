@@ -54,7 +54,8 @@ a { color: inherit; }
 .sidebar-stat.stat-fail .n { color: var(--fail); }
 .sidebar-stat.stat-review .n { color: var(--pending); }
 .sidebar-stat.stat-ready .n { color: var(--pass); }
-.sidebar-stat.stat-muted { padding-top: 7px; border-top: 1px dashed var(--border); color: var(--muted); }
+.sidebar-stat.stat-muted .n { color: var(--muted); }
+.sidebar-stat.sidebar-total { padding-top: 7px; margin-top: 3px; border-top: 1px dashed var(--border); color: var(--muted); }
 main#main-content { flex: 1 1 auto; min-width: 0; }
 .hc-section { margin-bottom: 44px; }
 .hc-section > h2 {
@@ -543,7 +544,15 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
   //    Has Fails/Needs Review. Fixed by reusing computeStatus() - the SAME thing the row
   //    badges already compute - instead of a second, looser definition living only here.
   function computeHeadlineCounts() {
-    var counts = { 'blocked': 0, 'has-fails': 0, 'needs-review': 0, 'ready': 0 };
+    // Every real (non-DM) status bucket gets a slot, so the sidebar breakdown
+    // always sums to exactly inScope - fixed 2026-08-31 (Milan caught it live:
+    // "160 total but the breakdown numbers add up to less than 100"). The
+    // previous version only tallied blocked/has-fails/needs-review/ready,
+    // silently dropping no-data/no-due-shots/no-shots from the breakdown
+    // entirely even though they're real, counted-elsewhere buckets (no-data
+    // alone is most of the backlog - see [[hc-backlog-true-shape]]).
+    var counts = {};
+    STATUS_ORDER.forEach(function (k) { if (k !== 'out-of-scope') counts[k] = 0; });
     var inScope = 0;
     var articlesReady = 0, dueShotsTotal = 0, dueShotsShipped = 0;
     function tally(id) {
@@ -581,16 +590,18 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     );
   }
 
+  // Every row here is one of STATUS_ORDER's real (non-DM) buckets, so the
+  // sum of every "n" always equals "In scope" exactly - no bucket is silently
+  // dropped the way no-data/no-due-shots/no-shots used to be.
+  var SIDEBAR_ROWS = ['blocked', 'has-fails', 'needs-review', 'ready', 'no-data', 'no-due-shots', 'no-shots'];
   function sidebarHtml() {
     var h = computeHeadlineCounts();
-    return (
-      '<h3>QA breakdown</h3>' +
-      '<div class="sidebar-stat stat-blocked"><span>Started — Team Needed</span><span class="n">' + h.counts['blocked'] + '</span></div>' +
-      '<div class="sidebar-stat stat-fail"><span>Started with Fails</span><span class="n">' + h.counts['has-fails'] + '</span></div>' +
-      '<div class="sidebar-stat stat-review"><span>Needs Review</span><span class="n">' + h.counts['needs-review'] + '</span></div>' +
-      '<div class="sidebar-stat stat-ready"><span>Ready to Publish</span><span class="n">' + h.counts['ready'] + '</span></div>' +
-      '<div class="sidebar-stat stat-muted"><span>In scope</span><span class="n">' + h.inScope + '</span></div>'
-    );
+    var rows = SIDEBAR_ROWS.map(function (k) {
+      var meta = STATUS_META[k];
+      return '<div class="sidebar-stat ' + meta.cls + '"><span>' + esc(meta.label) + '</span><span class="n">' + h.counts[k] + '</span></div>';
+    }).join('');
+    return '<h3>QA breakdown</h3>' + rows +
+      '<div class="sidebar-stat stat-muted sidebar-total"><span>In scope</span><span class="n">' + h.inScope + '</span></div>';
   }
 
   function assigneeOptionsHtml() {
