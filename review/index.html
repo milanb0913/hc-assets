@@ -408,7 +408,6 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     var meta = STATUS_META[status];
     var due = a.dueShots || 0;
     var dueShipped = a.dueShippedCount || 0;
-    var frozen = a.frozenShots || 0;
     var relPath = buildMap[id];
 
     var progressChips;
@@ -421,25 +420,39 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     } else if (due === 0) {
       progressChips = '<span class="chip chip-neutral">nothing due</span>';
     } else {
-      // QA collapsed to one fraction + a conditional fail count (2026-08-31, Milan:
-      // "combine pass/fail/unreviewed... into a simple 7/16 Passed"). Denominator is
-      // dueShipped, not due - Passed/Failed/Unreviewed only ever apply to shots that
-      // have actually been captured. Unreviewed stays implicit (dueShipped - pass -
-      // fail) rather than spelled out as its own chip; fail is the one number that's
-      // genuinely actionable, so it's the only thing that gets its own chip, and only
-      // when it's nonzero.
+      // QA collapsed to one fraction (2026-08-31, Milan). Denominator is dueShipped, not
+      // due - Passed only ever applies to shots that have actually been captured. The
+      // explicit fail count was dropped the same day (also Milan): it's inferable from
+      // the status badge itself - "Started with Fails" vs "Needs Review" already tells
+      // you WHICH kind of gap the remaining (dueShipped - pass) represents, so a second
+      // numeric chip for it was redundant, not new information.
       progressChips = (
         '<span class="chip chip-progress">' + dueShipped + '/' + due + ' captured</span>' +
         '<span class="chip chip-pass">' + c.pass + '/' + dueShipped + ' Passed</span>'
       );
-      if (c.fail > 0) progressChips += '<span class="chip chip-fail">' + c.fail + ' failed</span>';
       var blockedShots = (a.shots || []).filter(function (s) { return s.blockedForTeam; });
       if (blockedShots.length) {
         var reason = blockedShots.map(function (s) { return s.blockedReason || s.id; }).join(' · ');
         progressChips += '<span class="chip chip-blocked" title="' + esc(reason) + '">' + blockedShots.length + ' blocked</span>';
       }
     }
-    if (frozen > 0) progressChips += '<span class="chip chip-frozen" title="Permanently correct, never recaptured">' + frozen + ' frozen</span>';
+    // "Frozen" used to lump two different things under one vague label (2026-08-31, Milan
+    // flagged it). Split by what's actually true of each shot:
+    // - notAScreenshot: genuinely not a product UI capture at all - a spreadsheet/report
+    //   render (Static Reports, validation-report illustrations). Milan's own guess for
+    //   what "frozen" meant - correct for THIS half.
+    // - doNotRecapture (and not notAScreenshot): a real product screenshot, confirmed
+    //   still current, deliberately not being re-touched - e.g. student-facing shots held
+    //   because a rebrand hasn't shipped yet. Real UI, just not due - keeps the "frozen"
+    //   word since that's still accurate here, just no longer conflated with the other case.
+    var notScreenshotShots = (a.shots || []).filter(function (s) { return s.notAScreenshot; });
+    var confirmedCurrentShots = (a.shots || []).filter(function (s) { return s.doNotRecapture && !s.notAScreenshot; });
+    if (notScreenshotShots.length) {
+      progressChips += '<span class="chip chip-frozen" title="Not a browser/product UI capture - a spreadsheet or report render">' + notScreenshotShots.length + ' not a screenshot</span>';
+    }
+    if (confirmedCurrentShots.length) {
+      progressChips += '<span class="chip chip-frozen" title="Real product UI, confirmed still current - deliberately not recaptured">' + confirmedCurrentShots.length + ' frozen</span>';
+    }
 
     var assignedHtml = assignedVal ? '<span class="row-extra">Assigned: ' + esc(assignedVal) + '</span>' : '';
     // A dedicated, more prominent block for the bottom half of the card - not

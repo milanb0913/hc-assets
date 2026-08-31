@@ -26,7 +26,12 @@ html, body { margin: 0; padding: 0; background: var(--bg); }
 body { color: var(--ink); font-family: 'IBM Plex Sans', system-ui, sans-serif; line-height: 1.5; }
 a { color: var(--accent); }
 .masthead {
-  position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--border);
+  /* Not sticky (2026-08-31, Milan) - a per-article page has no persistent control (like
+     the hub's Filters button) worth keeping pinned, and a sticky header scales with browser
+     zoom same as everything else, so it eats a growing, PERSISTENT share of the viewport for
+     the whole time someone's zoomed in comparing shots closely - the exact complaint. Scrolls
+     away normally now, same as any other page content, so its cost is paid once, not per-scroll. */
+  background: var(--surface); border-bottom: 1px solid var(--border);
   padding: 20px clamp(20px, 5vw, 56px); display: flex; align-items: baseline; justify-content: space-between; gap: 24px; flex-wrap: wrap;
 }
 .masthead-left { display: flex; flex-direction: column; gap: 6px; }
