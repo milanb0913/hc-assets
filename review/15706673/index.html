@@ -321,9 +321,9 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
   function ensureReviewerName() {
     var name = getReviewerName();
     if (name) return name;
-    name = (window.prompt('Enter your name to record a verdict (saved on this device, asked once):') || '').trim();
+    name = (window.prompt('Enter your name to record this (saved on this device, asked once):') || '').trim();
     if (!name) {
-      setSyncStatus('Enter your name to record a verdict', true);
+      setSyncStatus('Enter your name to save this', true);
       return null;
     }
     setReviewerName(name);
@@ -375,8 +375,13 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
 
   function setNote(shotId, val) {
     val = val.trim();
-    var name = getReviewerName();
-    if (!name) return; // no verdict/reviewer yet - nothing to attach a note to server-side
+    // 2026-09-01 (Milan): was getReviewerName() (non-blocking) - a note typed with no
+    // cached name silently failed to save with no error shown at all, since the textarea
+    // itself has no idea whether its blur handler's write actually landed. Matches
+    // setVerdict's ensureReviewerName() now: prompts once if missing, shows a real error
+    // (via ensureReviewerName's own setSyncStatus call) if the reviewer cancels.
+    var name = ensureReviewerName();
+    if (!name) return;
     var current = myRow(shotId);
     if (current && (current.note || '') === val) return;
     var verdict = current ? current.verdict : '';
