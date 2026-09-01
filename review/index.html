@@ -1014,10 +1014,24 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
   // due+shipped shot in this article count toward pass/fail (a verdict on a
   // frozen/non-due/legacy-only shot, if one ever exists, is ignored here -
   // same "one due population" rule the rest of this page follows).
+  // Apps Script's exec endpoint occasionally answers a cold-start request with
+  // an HTML redirect/interstitial instead of JSON (throws in r.json()) - purely
+  // transient, gone on the next request a moment later. One retry after a short
+  // delay absorbs that without a full page reload; only the second failure is
+  // treated as a real outage.
+  function fetchSyncRows(retriesLeft) {
+    return fetch(SYNC_ENDPOINT + '?mode=rows')
+      .then(function (r) { return r.json(); })
+      .catch(function (e) {
+        if (retriesLeft <= 0) throw e;
+        return new Promise(function (resolve) { setTimeout(resolve, 1200); })
+          .then(function () { return fetchSyncRows(retriesLeft - 1); });
+      });
+  }
+
   function loadSyncCounts() {
     if (!SYNC_ENDPOINT) { setSyncStatus('Sync not configured', true); render(); return; }
-    fetch(SYNC_ENDPOINT + '?mode=rows')
-      .then(function (r) { return r.json(); })
+    fetchSyncRows(1)
       .then(function (data) {
         if (!data || !Array.isArray(data.rows)) {
           setSyncStatus('Sync endpoint not returning rows yet (old deployment?) — pass/fail counts show as 0 until it is redeployed', true);
