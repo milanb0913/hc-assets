@@ -230,6 +230,44 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
 .modal-applied-row { font-size: 0.86rem; color: var(--ink-soft); padding: 8px 0; border-bottom: 1px dashed var(--border); }
 .modal-applied-row b { color: var(--ink); }
 .modal-foot { display: flex; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--border); position: sticky; bottom: 0; background: var(--surface); }
+
+/* ---- "What's Left" backlog view (2026-09-02, Milan) - a rollup distinct from the QA
+   dashboard's per-article filtering, meant to answer "how much is left and where" at a
+   glance rather than "is this one article done." Same live data (computeStatus/countsFor),
+   just a different lens on it - no separate stale tracker, this reads the same source every
+   render like the rest of the hub. ---- */
+.modal-wide { width: min(820px, 100%); }
+.modal-wide .modal-body { display: block; padding: 20px 24px; }
+.backlog-buckets { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.backlog-bucket { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.backlog-bucket .n { display: block; font-family: 'Source Serif 4', Georgia, serif; font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.backlog-bucket .lbl { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+.backlog-bucket .sub { font-size: 0.74rem; color: var(--ink-soft); margin-top: 2px; }
+.backlog-bucket-blocked { border-color: var(--accent); background: var(--accent-soft); }
+.backlog-bucket-notstarted { border-color: var(--border); background: var(--surface-sunken); }
+.backlog-bucket-fails { border-color: var(--fail); background: var(--fail-soft); }
+.backlog-bucket-review { border-color: var(--pending); background: var(--pending-soft); }
+.backlog-list-head { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; margin: 4px 0 10px; }
+.backlog-est-note { text-transform: none; letter-spacing: normal; font-weight: 400; font-style: italic; }
+.backlog-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 0; border-bottom: 1px dashed var(--border); font-size: 0.86rem;
+}
+.backlog-row:last-child { border-bottom: none; }
+.backlog-row-title { font-weight: 500; flex: 1; min-width: 0; }
+.backlog-row-title a { color: inherit; text-decoration: none; }
+.backlog-row-title a:hover { color: var(--accent); text-decoration: underline; }
+.backlog-row-counts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.backlog-empty { color: var(--muted); font-size: 0.86rem; padding: 8px 0 20px; }
+.backlog-notes-wrap { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+.backlog-notes-wrap h4 { font-size: 0.92rem; margin: 0 0 4px; }
+.backlog-notes-hint { font-size: 0.78rem; color: var(--muted); margin: 0 0 10px; }
+.backlog-notes-textarea {
+  width: 100%; min-height: 110px; font-family: inherit; font-size: 0.88rem; color: var(--ink);
+  background: var(--surface-sunken); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; resize: vertical; box-sizing: border-box;
+}
+.backlog-notes-status { font-size: 0.76rem; color: var(--muted); margin-top: 6px; font-family: 'IBM Plex Mono', monospace; }
 @media (max-width: 600px) { .modal-body { grid-template-columns: 1fr; } .modal-create { border-right: none; border-bottom: 1px solid var(--border); } }
 
 .content-gate {
@@ -245,6 +283,7 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
   <span id="sync-status" class="sync-status"></span>
   <div class="filters-bar">
     <button type="button" id="open-filters-btn" class="filters-btn"><span id="filters-btn-label">Filters</span></button>
+    <button type="button" id="open-backlog-btn" class="filters-btn">What's Left</button>
     <div class="applied-filters" id="applied-filters"></div>
     <select id="assignee-filter" class="assignee-filter"><option value="">Anyone</option><option value="__unassigned__">Unassigned</option><option value="MB">MB</option><option value="SL">SL</option></select>
     <input type="text" id="search-input" class="search-input" placeholder="Search title or #id...">
@@ -252,6 +291,12 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
   </div>
 </div>
 <datalist id="assignee-list"><option value="MB">MB</option><option value="SL">SL</option></datalist>
+<div class="modal-overlay" id="backlog-modal-overlay" hidden>
+  <div class="modal modal-wide" id="backlog-modal" role="dialog" aria-modal="true" aria-label="What's Left">
+    <div class="modal-head"><h3>What's Left</h3><button type="button" id="backlog-modal-close-btn">Close</button></div>
+    <div class="modal-body" id="backlog-modal-body"></div>
+  </div>
+</div>
 <div class="modal-overlay" id="filters-modal-overlay" hidden>
   <div class="modal" id="filters-modal" role="dialog" aria-modal="true" aria-label="Filter Settings">
     <div class="modal-head"><h3>Filter Settings</h3><button type="button" id="modal-close-btn">Cancel &amp; Close</button></div>
@@ -391,6 +436,15 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
   //     other button, which upserts your same row to the new value.
   // article_id -> { verdict: ''|'pass'|'fail', draftUrl, staleProse, staleProseNote }
   var contentByArticle = {};
+
+  // "What's Left" backlog notes (2026-09-02) - one shared free-text note, same reserved-slot
+  // Sheet mechanism as everything else here. article_id '__backlog__', slot '__notes__' - not
+  // article-scoped, not per-shot, just a single global scratchpad. Each editor's save upserts
+  // THEIR OWN row (reviewer = their cached name), so multiple people editing over time keeps a
+  // real row per editor rather than fighting over one - latest by updated_at wins for display,
+  // same pattern as publishRequested above.
+  var backlogNotes = '';
+  var backlogNotesTime = '';
 
   function esc(s) {
     return String(s).replace(/[&<>"']/g, function (c) {
@@ -768,6 +822,103 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
       '<div class="sidebar-stat stat-muted sidebar-total"><span>In scope</span><span class="n">' + h.inScope + '</span></div>';
   }
 
+  // "What's Left" (2026-09-02, Milan): the QA breakdown above answers "is THIS article done" -
+  // this answers "how much is left, and where is most of it" at a glance. Deliberately reuses
+  // computeStatus() as the single source of truth for which bucket an article falls into
+  // (exactly one bucket each, same as the sidebar) rather than inventing parallel bucketing
+  // logic that could drift from it. 'ready'/'no-due-shots'/'no-shots'/'out-of-scope' are done
+  // or n/a - not "left" - and are excluded here entirely, same as the sidebar's own framing.
+  var BACKLOG_BUCKET_META = {
+    blocked:        { label: 'Needs You',            cls: 'backlog-bucket-blocked' },
+    'no-data':      { label: 'Not Started',          cls: 'backlog-bucket-notstarted' },
+    'has-fails':    { label: 'Failed, Needs Rework',  cls: 'backlog-bucket-fails' },
+    'needs-review': { label: 'Shipped, Unreviewed',  cls: 'backlog-bucket-review' },
+  };
+  function computeBacklog() {
+    var buckets = {};
+    Object.keys(BACKLOG_BUCKET_META).forEach(function (k) { buckets[k] = { articles: 0, shots: 0 }; });
+    var rows = [];
+    function tally(id) {
+      if (dmIds[id]) return;
+      var a = statusById[id];
+      if (!a) return;
+      var c = countsFor(a);
+      var status = computeStatus(a, c);
+      if (!buckets[status]) return; // ready / no-due-shots / no-shots / out-of-scope - done or n/a
+      var due = a.dueShots || 0;
+      var dueShipped = a.dueShippedCount || 0;
+      // survey-all-articles.mjs hardcodes dueShots/dueShippedCount to 0 for any article with no
+      // manifest yet (it never guesses a due count without a real manifest to count from) - so
+      // Math.max(0, due - dueShipped) alone would silently report "0 to capture" for exactly the
+      // articles carrying the biggest real backlog: 44% of live images have no manifest at all
+      // (see [[hc-backlog-true-shape]]), and that's the same undercount shape this view exists to
+      // catch, not repeat. Fall back to legacyImageCount (the real live-image count) as an
+      // estimate for those, flagged so the UI can mark it as approximate rather than exact.
+      var toCaptureIsEstimate = !a.hasManifest;
+      var toCapture = toCaptureIsEstimate ? (a.legacyImageCount || 0) : Math.max(0, due - dueShipped);
+      var blockedCount = (a.shots || []).filter(function (s) { return s.blockedForTeam; }).length;
+      var shotsForBucket = status === 'blocked' ? blockedCount
+        : status === 'no-data' ? toCapture
+        : status === 'has-fails' ? c.fail
+        : c.neutral; // needs-review
+      buckets[status].articles++;
+      buckets[status].shots += shotsForBucket;
+      // The sort key: every shot still needing SOME kind of attention, whichever kind -
+      // capture, rework, or a first look. Not the same as any one bucket's own count above,
+      // since e.g. a has-fails article can also carry its own toCapture remainder.
+      rows.push({
+        id: a.id, title: a.articleTitle || a.title, status: status,
+        toCapture: toCapture, toCaptureIsEstimate: toCaptureIsEstimate,
+        failed: c.fail, unreviewed: c.neutral,
+        total: toCapture + c.fail + c.neutral,
+      });
+    }
+    struct.sections.forEach(function (sec) { sec.subsections.forEach(function (sub) { sub.articles.forEach(tally); }); });
+    unmapped.forEach(function (a) { tally(a.id); });
+    rows.sort(function (a, b) { return b.total - a.total; });
+    return { buckets: buckets, rows: rows };
+  }
+
+  function backlogModalBodyHtml() {
+    var data = computeBacklog();
+    var bucketsHtml = '<div class="backlog-buckets">' + Object.keys(BACKLOG_BUCKET_META).map(function (k) {
+      var meta = BACKLOG_BUCKET_META[k];
+      var b = data.buckets[k];
+      return '<div class="backlog-bucket ' + meta.cls + '"><span class="n">' + b.shots + '</span>' +
+        '<span class="lbl">' + esc(meta.label) + '</span>' +
+        '<span class="sub">' + b.articles + ' article' + (b.articles === 1 ? '' : 's') + '</span></div>';
+    }).join('') + '</div>';
+
+    var hasEstimate = data.rows.some(function (r) { return r.toCaptureIsEstimate; });
+
+    var listHtml;
+    if (!data.rows.length) {
+      listHtml = '<div class="backlog-empty">Nothing left — every in-scope article is Ready, Nothing Due, or No Shot.</div>';
+    } else {
+      listHtml = '<div class="backlog-list-head">Articles with the most left, first' +
+        (hasEstimate ? ' <span class="backlog-est-note">(~ = no manifest yet, count is the live image total, not a real shot count)</span>' : '') +
+        '</div>' + data.rows.map(function (r) {
+        var relPath = buildMap[r.id];
+        var titleHtml = relPath
+          ? '<a href="' + esc(relPath) + '" target="_blank" rel="noopener">' + esc(r.title || ('#' + r.id)) + '</a>'
+          : esc(r.title || ('#' + r.id));
+        var chips = '';
+        if (r.toCapture > 0) chips += '<span class="chip chip-progress">' + (r.toCaptureIsEstimate ? '~' : '') + r.toCapture + ' to capture' + (r.toCaptureIsEstimate ? ' (no manifest yet - est.)' : '') + '</span>';
+        if (r.failed > 0) chips += '<span class="chip chip-fail">' + r.failed + ' failed</span>';
+        if (r.unreviewed > 0) chips += '<span class="chip chip-pending">' + r.unreviewed + ' unreviewed</span>';
+        return '<div class="backlog-row"><span class="backlog-row-title">' + titleHtml + '</span><span class="backlog-row-counts">' + chips + '</span></div>';
+      }).join('');
+    }
+
+    return bucketsHtml + listHtml +
+      '<div class="backlog-notes-wrap">' +
+        '<h4>Notes</h4>' +
+        '<p class="backlog-notes-hint">Shared with anyone who opens this — saved automatically when you click away.</p>' +
+        '<textarea class="backlog-notes-textarea" id="backlog-notes-textarea" placeholder="Planning notes, priorities, anything worth flagging…">' + esc(backlogNotes || '') + '</textarea>' +
+        '<div class="backlog-notes-status" id="backlog-notes-status"></div>' +
+      '</div>';
+  }
+
   function assigneeOptionsHtml() {
     var names = {};
     Object.keys(assigned).forEach(function (id) { if (assigned[id]) names[assigned[id]] = true; });
@@ -913,6 +1064,16 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     editingDimension = null;
   }
 
+  function openBacklogModal() {
+    document.getElementById('backlog-modal-overlay').hidden = false;
+    document.getElementById('backlog-modal-body').innerHTML = backlogModalBodyHtml();
+    var ta = document.getElementById('backlog-notes-textarea');
+    if (ta) ta.addEventListener('blur', function () { saveBacklogNotes(ta.value); });
+  }
+  function closeBacklogModal() {
+    document.getElementById('backlog-modal-overlay').hidden = true;
+  }
+
   function wireModalValueCheckboxes() {
     var wrap = document.getElementById('modal-values-wrap');
     if (!wrap) return;
@@ -945,6 +1106,11 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     modalControlsWired = true;
     document.getElementById('open-filters-btn').addEventListener('click', openModal);
     document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+    document.getElementById('open-backlog-btn').addEventListener('click', openBacklogModal);
+    document.getElementById('backlog-modal-close-btn').addEventListener('click', closeBacklogModal);
+    document.getElementById('backlog-modal-overlay').addEventListener('click', function (e) {
+      if (e.target.id === 'backlog-modal-overlay') closeBacklogModal();
+    });
     document.getElementById('filters-modal-overlay').addEventListener('click', function (e) {
       if (e.target.id === 'filters-modal-overlay') closeModal();
     });
@@ -1162,6 +1328,37 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
       });
   }
 
+  // Saves the "What's Left" backlog notes textarea on blur - same POST shape as everything
+  // else here. No-ops (doesn't even prompt) if the text hasn't actually changed since load, so
+  // clicking into the box and back out without typing anything never fires a write.
+  function saveBacklogNotes(val) {
+    var statusEl = document.getElementById('backlog-notes-status');
+    if (val === backlogNotes) return;
+    if (!SYNC_ENDPOINT) { if (statusEl) statusEl.textContent = 'Sync not configured - not saved'; return; }
+    var name = ensureReviewerName();
+    if (!name) { if (statusEl) statusEl.textContent = 'Enter your name to save notes'; return; }
+    if (statusEl) statusEl.textContent = 'Saving…';
+    fetch(SYNC_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify([{
+        article_id: '__backlog__', article: '',
+        slot: '__notes__', shot_id: '__notes__',
+        reviewer: name, verdict: '', note: val,
+      }]),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || !data.ok) throw new Error((data && data.error) || 'endpoint returned not-ok');
+        backlogNotes = val;
+        backlogNotesTime = new Date().toISOString();
+        if (statusEl) statusEl.textContent = 'Saved';
+      })
+      .catch(function (e) {
+        if (statusEl) statusEl.textContent = 'Not saved — ' + e.message;
+      });
+  }
+
   function setSyncStatus(text, isError) {
     var el = document.getElementById('sync-status');
     if (!el) return;
@@ -1262,6 +1459,19 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
           if (row.draft_url) c.draftUrl = row.draft_url;
           if (row.stale_prose) c.staleProse = row.stale_prose;
           if (row.stale_prose_note) c.staleProseNote = row.stale_prose_note;
+        });
+
+        // Backlog notes, reserved article_id '__backlog__' / slot '__notes__' - see
+        // backlogNotes' own declaration. One or more rows (one per editor); keep whichever has
+        // the latest updated_at, same "don't trust Sheet row order to be chronological" caution
+        // as the publish-rows aggregation above.
+        data.rows.forEach(function (row) {
+          if (String(row.article_id) !== '__backlog__') return;
+          if (String(row.shot_id || row.slot || '') !== '__notes__') return;
+          var when = row.updated_at || '';
+          if (backlogNotesTime && when && when < backlogNotesTime) return;
+          backlogNotesTime = when;
+          backlogNotes = row.note || '';
         });
 
         var byArticleShot = {}; // article_id -> shot_id -> verdict[]
