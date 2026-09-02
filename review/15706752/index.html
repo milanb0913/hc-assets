@@ -200,7 +200,17 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
   function notCapturedReason(s) {
     if (s.blockedForTeam) return 'Blocked — team needed' + (s.blockedReason ? ': ' + s.blockedReason : '');
     if (s.notAScreenshot) return 'Not a screenshot — not real product UI';
-    if (s.doNotRecapture) return 'Frozen — live image confirmed current, not being recaptured';
+    if (s.doNotRecapture) {
+      // 'Frozen' implies a real existing image is just being left alone -
+      // true for a genuine recapture-freeze, false for a shot that was only
+      // ever PROPOSED (no legacy image either) and then declined. Conflating
+      // the two reads as self-contradictory: one column saying "new addition"
+      // while the other says "live image confirmed current" when no image
+      // ever existed on either side. See B131/B132 in OPEN-THREADS.md.
+      return s.legacy
+        ? 'Frozen — live image confirmed current, not being recaptured'
+        : 'Declined — proposed as a new addition, decided not needed (see note)';
+    }
     if (s.dueForCapture === false) return 'Not due this round';
     return 'Not captured yet';
   }
@@ -210,7 +220,7 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
   function notCapturedLabel(s) {
     if (s.blockedForTeam) return 'Blocked';
     if (s.notAScreenshot) return 'Not a screenshot';
-    if (s.doNotRecapture) return 'Frozen';
+    if (s.doNotRecapture) return s.legacy ? 'Frozen' : 'Declined';
     if (s.dueForCapture === false) return 'Not due';
     return 'Awaiting capture';
   }
@@ -226,7 +236,14 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
     if (s.legacy) {
       return '<div class="imgwrap"><img src="' + esc(s.legacy) + '" alt="' + esc(s.id) + ' legacy" loading="lazy"></div>';
     }
-    return '<div class="imgwrap awaiting"><div class="awaiting-msg">No legacy image - this is a new addition, not a recapture.</div></div>';
+    // Same doNotRecapture check as notCapturedReason() - a shot proposed and
+    // then declined never gets a legacy image either, so saying "this is a
+    // new addition" here (which implies it's still coming) would contradict
+    // the AFTER column's own "Declined" message right next to it.
+    var msg = s.doNotRecapture
+      ? 'No legacy image — this was proposed as a new addition, then declined. See the AFTER column.'
+      : 'No legacy image - this is a new addition, not a recapture.';
+    return '<div class="imgwrap awaiting"><div class="awaiting-msg">' + esc(msg) + '</div></div>';
   }
 
   function otherReviewsHtml(s) {
