@@ -117,6 +117,16 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
 }
 .publish-badge-pending { background: var(--pending-soft); color: var(--pending); }
 .publish-badge-done { background: var(--surface-sunken); color: var(--muted); }
+.flag-btn {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.72rem; font-weight: 700;
+  padding: 4px 10px; border-radius: 100px; border: 1px solid var(--border); background: var(--surface);
+  color: var(--muted); cursor: pointer; white-space: nowrap; letter-spacing: 0.02em;
+}
+.flag-btn:hover { border-color: var(--pending); color: var(--pending); }
+.flag-btn-active { border: 1px solid var(--pending); background: var(--pending-soft); color: var(--pending); }
+.flag-btn-active:hover { background: var(--pending); color: var(--surface); }
+.flag-btn:disabled { opacity: 0.6; cursor: wait; }
+.row-notes-flag { background: var(--pending-soft); }
 .publish-error { font-size: 0.7rem; color: var(--fail); margin-left: 6px; }
 .row-extras {
   margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);
@@ -447,6 +457,16 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
   var backlogNotes = '';
   var backlogNotesTime = '';
 
+  // "Flag for later" (2026-09-03, Milan: wants a simple way to mark an article he's seen an
+  // issue on but won't address yet, then filter for those). Same reserved-slot trick as
+  // everything else here: article_id = real article id, slot/shot_id '__flag__', never a real
+  // shot id. Not a vote (unlike Content QA) - a plain toggle, so a later flag/unflag simply
+  // upserts your own row to the new state; the aggregation below keeps whichever row is most
+  // recently updated across all reviewers, same "don't trust Sheet order" caution as
+  // publishRequested. note carries the optional reason typed at flag time.
+  // article_id -> { flagged: bool, note, who, when }
+  var flaggedByArticle = {};
+
   function esc(s) {
     return String(s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -610,6 +630,17 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     // squeezed inline with Assigned, per Milan's request 2026-08-28.
     var notesHtml = note ? '<div class="row-notes"><span class="row-notes-label">Notes</span>' + esc(note) + '</div>' : '';
 
+    // Flag for later (2026-09-03) - see flaggedByArticle's own declaration for the design.
+    var flagState = flaggedByArticle[a.id] || { flagged: false, note: '', who: '' };
+    var flagBtnHtml = flagState.flagged
+      ? '<button type="button" class="flag-btn flag-btn-active" data-flag-id="' + esc(a.id) +
+          '" data-flag-title="' + esc(a.articleTitle || a.title || '') + '" data-flag-state="flagged" title="Click to unflag">&#128681; Flagged</button>'
+      : '<button type="button" class="flag-btn" data-flag-id="' + esc(a.id) +
+          '" data-flag-title="' + esc(a.articleTitle || a.title || '') + '" data-flag-state="unflagged" title="Flag for later">&#128681; Flag</button>';
+    var flagNoteHtml = (flagState.flagged && flagState.note)
+      ? '<div class="row-notes row-notes-flag"><span class="row-notes-label">Flagged' + (flagState.who ? ' by ' + esc(flagState.who) : '') + '</span>' + esc(flagState.note) + '</div>'
+      : '';
+
     var hcUrl = hcUrls[a.id];
     // The id is its OWN <a> to the live HC article now, sibling to (not
     // nested inside) linkHtml's own <a> - two anchors sharing one parent is
@@ -697,13 +728,14 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     );
     var collection = dmIds[id] ? 'DM' : 'SM';
     // Every real row is 'overhaul' today - see the Campaign dimension's own comment above.
-    var dataAttrs = 'data-status="' + status + '" data-assigned="' + esc(assignedVal) + '" data-collection="' + collection + '" data-campaign="overhaul"';
+    var dataAttrs = 'data-status="' + status + '" data-assigned="' + esc(assignedVal) + '" data-collection="' + collection +
+      '" data-campaign="overhaul" data-flagged="' + (flagState.flagged ? 'yes' : '') + '"';
     var linkHtml = relPath
       ? '<a class="row-link" href="' + esc(relPath) + '" target="_blank" rel="noopener">' + inner + '<span class="row-arrow">Open →</span></a>'
       : '<div class="row-link row-link-muted">' + inner + '<span class="row-arrow row-arrow-muted">Not built yet</span></div>';
     return '<div class="row' + (relPath ? '' : ' row-unbuilt') + '" ' + dataAttrs + '>' +
-      '<div class="row-head">' + linkHtml + idHtml + publishHtml + '</div>' +
-      (assignedHtml || notesHtml || contentHtml ? '<div class="row-extras">' + assignedHtml + notesHtml + contentHtml + '</div>' : '') +
+      '<div class="row-head">' + linkHtml + idHtml + flagBtnHtml + publishHtml + '</div>' +
+      (assignedHtml || notesHtml || flagNoteHtml || contentHtml ? '<div class="row-extras">' + assignedHtml + notesHtml + flagNoteHtml + contentHtml + '</div>' : '') +
       '</div>';
   }
 
@@ -947,7 +979,7 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
   // the real data yet - same honest-placeholder shape as Type/Content: the
   // option exists so the vocabulary is already familiar once real per-release
   // tagging exists, rather than being a second UI change later.
-  var DIMENSION_ORDER = ['product', 'type', 'section', 'status', 'campaign'];
+  var DIMENSION_ORDER = ['product', 'type', 'section', 'status', 'campaign', 'flagged'];
   var DIMENSIONS = {
     product:  { label: 'Product',  options: [['SM', 'Scholarship Management'], ['DM', 'Donor Management']] },
     type:     { label: 'Type',     options: [['shots', 'Shots'], ['content', 'Content']] },
@@ -958,13 +990,17 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     // its "DM" badge rendered - it's just not something you filter Status by any more.
     status:   { label: 'Status',   options: STATUS_ORDER.filter(function (k) { return k !== 'out-of-scope'; }).map(function (k) { return [k, STATUS_META[k].label]; }) },
     campaign: { label: 'Campaign', options: [['overhaul', 'Overhaul'], ['release', 'New Release']] },
+    // Single-option dimension - "not filtering" (empty) shows everything, applying it shows
+    // only flagged rows. Same generic dimension machinery (chips, modal, localStorage) as
+    // every other filter here, nothing flag-specific needed beyond this one entry.
+    flagged:  { label: 'Flagged',  options: [['yes', 'Flagged for later']] },
   };
 
   // appliedFilters: the live, in-effect filter state. draftFilters: a working
   // copy edited inside the open modal, committed to appliedFilters only on
   // "Save Filters" (or discarded on "Cancel & Close") - mirrors the real
   // Task Board's own Apply-then-Save two-step exactly.
-  var appliedFilters = { product: ['SM'], type: [], section: [], status: [], campaign: [] };
+  var appliedFilters = { product: ['SM'], type: [], section: [], status: [], campaign: [], flagged: [] };
   var draftFilters = null;
   var editingDimension = null; // which dimension "Filter by" currently shows values for, inside the modal
 
@@ -1161,6 +1197,12 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
         setContentVerdict(contentBtn.getAttribute('data-content-id'), contentBtn.getAttribute('data-content-title'),
           contentBtn.getAttribute('data-content-val'), contentBtn);
       }
+      var flagBtn = e.target.closest && e.target.closest('.flag-btn');
+      if (flagBtn) {
+        e.preventDefault(); // row-head has no enclosing <a>, same reasoning as publish-btn above
+        toggleFlag(flagBtn.getAttribute('data-flag-id'), flagBtn.getAttribute('data-flag-title'),
+          flagBtn.getAttribute('data-flag-state') === 'flagged', flagBtn);
+      }
     });
     var assigneeSelect = document.getElementById('assignee-filter');
     if (assigneeSelect) assigneeSelect.addEventListener('change', applyFilters);
@@ -1171,6 +1213,8 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
   function rowMatches(row) {
     var status = row.getAttribute('data-status');
     if (appliedFilters.status.length && appliedFilters.status.indexOf(status) === -1) return false;
+    var flagged = row.getAttribute('data-flagged') || '';
+    if (appliedFilters.flagged.length && appliedFilters.flagged.indexOf(flagged) === -1) return false;
     var assigneeSelect = document.getElementById('assignee-filter');
     var assignee = assigneeSelect ? assigneeSelect.value : '';
     if (assignee) {
@@ -1329,6 +1373,43 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
       });
   }
 
+  // Flag/unflag one article for later (2026-09-03) - a plain toggle, not a vote: clicking
+  // always upserts YOUR row to the opposite of the current state. Prompts for an optional
+  // reason only when flagging (nothing to ask when clearing a flag).
+  function toggleFlag(articleId, articleTitle, isFlagged, btnEl) {
+    if (!SYNC_ENDPOINT) { alert('Sync endpoint not configured - cannot flag.'); return; }
+    if (!articleId) return;
+    var name = ensureReviewerName();
+    if (!name) {
+      btnEl.insertAdjacentHTML('afterend', '<span class="publish-error">Enter your name to flag</span>');
+      return;
+    }
+    var note = '';
+    if (!isFlagged) {
+      note = (window.prompt('Optional: why flag "' + articleTitle + '" for later? (leave blank to skip)') || '').trim();
+    }
+    btnEl.disabled = true;
+    fetch(SYNC_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify([{
+        article_id: String(articleId), article: articleTitle || '',
+        slot: '__flag__', shot_id: '__flag__',
+        reviewer: name, verdict: isFlagged ? 'unflagged' : 'flagged', note: note,
+      }]),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || !data.ok) throw new Error((data && data.error) || 'endpoint returned not-ok');
+        flaggedByArticle[articleId] = { flagged: !isFlagged, note: note, who: name, when: new Date().toISOString() };
+        applyFilters();
+      })
+      .catch(function (e) {
+        btnEl.disabled = false;
+        btnEl.insertAdjacentHTML('afterend', '<span class="publish-error">Failed: ' + esc(e.message) + '</span>');
+      });
+  }
+
   // Saves the "What's Left" backlog notes textarea on blur - same POST shape as everything
   // else here. No-ops (doesn't even prompt) if the text hasn't actually changed since load, so
   // clicking into the box and back out without typing anything never fires a write.
@@ -1441,6 +1522,20 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
           if (publishRowTime[kind][aid] && when && when < publishRowTime[kind][aid]) return; // older than what we already kept
           publishRowTime[kind][aid] = when;
           publishRequested[kind][aid] = { state: row.verdict, when: when, who: row.reviewer || '' };
+        });
+
+        // Flag rows, reserved slot '__flag__' - see flaggedByArticle's own declaration. Not a
+        // vote: keep whichever row is most recently updated across all reviewers, same
+        // "don't trust Sheet order" caution as the publish-rows pass above.
+        var flagRowTime = {};
+        data.rows.forEach(function (row) {
+          var sid = String(row.shot_id || row.slot || '');
+          if (sid !== '__flag__') return;
+          var aid = String(row.article_id);
+          var when = row.updated_at || '';
+          if (flagRowTime[aid] && when && when < flagRowTime[aid]) return;
+          flagRowTime[aid] = when;
+          flaggedByArticle[aid] = { flagged: row.verdict === 'flagged', note: row.note || '', who: row.reviewer || '', when: when };
         });
 
         // Content-track rows, reserved slot '__content__' - see contentByArticle's own
