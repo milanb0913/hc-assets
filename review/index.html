@@ -9,6 +9,10 @@
   --accent-soft: #fbe4ec;
   --pass: #1a7a4c; --pass-soft: #e4f5ec; --fail: #b3261e; --fail-soft: #fbe9e7;
   --pending: #8a6d00; --pending-soft: #fbf3d9; --shadow: rgba(30, 36, 48, 0.10);
+  /* Published's own color (2026-09-05, Milan) - distinct from --pass so a genuinely-live
+     article reads as its own state, not a shade of "shot QA passed". Same blue as the Style
+     Guide's own Link/Info token (#1D4ED8) for consistency with the rest of the project. */
+  --info: #1D4ED8; --info-soft: #e5ecfc;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -17,6 +21,7 @@
     --accent-soft: #3a2431;
     --pass: #4fd08c; --pass-soft: #16281f; --fail: #ff6b61; --fail-soft: #2c1815;
     --pending: #e0c04a; --pending-soft: #2c2611; --shadow: rgba(0, 0, 0, 0.45);
+    --info: #7ba7ff; --info-soft: #1a2540;
   }
 }
 :root[data-theme="dark"] {
@@ -25,6 +30,7 @@
   --accent-soft: #3a2431;
   --pass: #4fd08c; --pass-soft: #16281f; --fail: #ff6b61; --fail-soft: #2c1815;
   --pending: #e0c04a; --pending-soft: #2c2611; --shadow: rgba(0, 0, 0, 0.45);
+  --info: #7ba7ff; --info-soft: #1a2540;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; background: var(--bg); }
@@ -93,6 +99,7 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
 .status-review { background: var(--pending-soft); color: var(--pending); }
 .status-blocked { background: var(--accent-soft); color: var(--accent); }
 .status-ready { background: var(--pass-soft); color: var(--pass); }
+.status-published { background: var(--info-soft); color: var(--info); }
 .status-muted { background: var(--surface-sunken); color: var(--muted); }
 .chip { font-size: 0.7rem; font-weight: 600; padding: 2px 9px; border-radius: 100px; white-space: nowrap; }
 .chip-progress { background: var(--accent-soft); color: var(--accent); font-variant-numeric: tabular-nums; }
@@ -561,10 +568,10 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
   // label it pairs with, deliberately not a second word for the same idea).
   var STATUS_ORDER = ['published', 'blocked', 'has-fails', 'needs-review', 'ready', 'no-due-shots', 'no-data', 'out-of-scope', 'no-shots'];
   var STATUS_META = {
-    // Same green as 'ready' - published is a MORE complete state than ready, not a different
-    // kind of outcome, so it keeps the same "this one's good" color, just a label that matches
-    // reality once it's actually live.
-    'published':    { label: 'Published',             cls: 'status-ready' },
+    // Own color (2026-09-05, Milan: "make Published a distinct color like blue") - distinct
+    // from 'ready' green so a genuinely-live article reads as its own state, not a shade of
+    // "shot QA passed". Matches the Style Guide's own Link/Info blue token.
+    'published':    { label: 'Published',             cls: 'status-published' },
     'blocked':      { label: 'Started — Team Needed', cls: 'status-blocked' },
     'has-fails':    { label: 'Started with Fails',    cls: 'status-fail' },
     'needs-review': { label: 'Needs Review',          cls: 'status-review' },
