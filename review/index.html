@@ -514,6 +514,13 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     // Publish below; "reviewed, confirmed nothing to capture, permanently" (the Static Reports
     // family) is Nothing Due/No Shot below, with the human confirmation already preserved in that
     // article's own hub note - no status-level flag needed for it.
+    // Checked FIRST, ahead of everything else: once images are actually live, the shot-capture
+    // lifecycle status is moot for this badge - "Ready to Publish" next to an "Images published"
+    // badge read as directly contradictory (Milan, 2026-09-05, flagged with a screenshot of
+    // Creating a Scholarship showing both). The underlying shot counts (9/9 captured, 9/9
+    // Passed) still render via the progress chips below; only this top-level status label
+    // needed to stop lying once the thing it was telling you to do had already happened.
+    if (publishRequested.images[a.id] && publishRequested.images[a.id].state === 'published') return 'published';
     if (dmIds[a.id]) return 'out-of-scope';
     if (!a.hasManifest) {
       // A structurally shotless article (the live HC page itself has zero
@@ -552,8 +559,12 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
   // "Has Fails"/"blocked" relabeled to make clear both are sub-states of "capture has
   // started" - Title Case throughout, "N/A"->"No Shot" (same word as the capture-track
   // label it pairs with, deliberately not a second word for the same idea).
-  var STATUS_ORDER = ['blocked', 'has-fails', 'needs-review', 'ready', 'no-due-shots', 'no-data', 'out-of-scope', 'no-shots'];
+  var STATUS_ORDER = ['published', 'blocked', 'has-fails', 'needs-review', 'ready', 'no-due-shots', 'no-data', 'out-of-scope', 'no-shots'];
   var STATUS_META = {
+    // Same green as 'ready' - published is a MORE complete state than ready, not a different
+    // kind of outcome, so it keeps the same "this one's good" color, just a label that matches
+    // reality once it's actually live.
+    'published':    { label: 'Published',             cls: 'status-ready' },
     'blocked':      { label: 'Started — Team Needed', cls: 'status-blocked' },
     'has-fails':    { label: 'Started with Fails',    cls: 'status-fail' },
     'needs-review': { label: 'Needs Review',          cls: 'status-review' },
@@ -671,7 +682,7 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     // that on every due shot shipped, zero Fails, zero unreviewed, so there is
     // no separate eligibility check to duplicate here.
     var publishHtml = '';
-    if (status === 'ready') {
+    if (status === 'ready' || status === 'published') {
       publishHtml = publishControlHtml('images', a.articleTitle || a.title);
     }
 
@@ -681,7 +692,7 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     // (dueShipped >= due is exactly what separates them from no-data/blocked in computeStatus
     // above); QA outcome on the shots doesn't matter for whether Content work is relevant.
     var contentHtml = '';
-    if (status === 'has-fails' || status === 'needs-review' || status === 'ready') {
+    if (status === 'has-fails' || status === 'needs-review' || status === 'ready' || status === 'published') {
       var cc = contentByArticle[a.id] || { verdict: '', draftUrl: '', staleProse: '', staleProseNote: '' };
       var hasDraft = !!(cc.draftUrl || cc.staleProse || cc.staleProseNote);
       var captureBadge = hasDraft
@@ -826,7 +837,7 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
       // No Shot and Nothing Due are trivially ready - nothing exists to review, same
       // reasoning as the rest of this model (a confirmed-frozen or image-less article
       // isn't "behind," it's done).
-      if (status === 'ready' || status === 'no-shots' || status === 'no-due-shots') articlesReady++;
+      if (status === 'ready' || status === 'published' || status === 'no-shots' || status === 'no-due-shots') articlesReady++;
     }
     struct.sections.forEach(function (sec) { sec.subsections.forEach(function (sub) { sub.articles.forEach(tally); }); });
     unmapped.forEach(function (a) { tally(a.id); });
@@ -850,7 +861,7 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
   // Every row here is one of STATUS_ORDER's real (non-DM) buckets, so the
   // sum of every "n" always equals "In scope" exactly - no bucket is silently
   // dropped the way no-data/no-due-shots/no-shots used to be.
-  var SIDEBAR_ROWS = ['blocked', 'has-fails', 'needs-review', 'ready', 'no-data', 'no-due-shots', 'no-shots'];
+  var SIDEBAR_ROWS = ['published', 'blocked', 'has-fails', 'needs-review', 'ready', 'no-data', 'no-due-shots', 'no-shots'];
   function sidebarHtml() {
     var h = computeHeadlineCounts();
     var rows = SIDEBAR_ROWS.map(function (k) {
