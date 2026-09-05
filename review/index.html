@@ -727,9 +727,15 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
       '<div class="row-counts">' + progressChips + '</div>'
     );
     var collection = dmIds[id] ? 'DM' : 'SM';
+    // Same three-state read as publishControlHtml's own badge above - 'yes' when the Sheet has
+    // a 'published' verdict for this article's __publish_images__ slot, 'requested' when someone
+    // clicked Publish but it isn't confirmed live, 'no' otherwise. Filterable per Milan's request
+    // (2026-09-05) - previously visible only as a badge, not something you could filter rows by.
+    var imagesPub = publishRequested.images[a.id];
+    var publishedVal = imagesPub && imagesPub.state === 'published' ? 'yes' : imagesPub && imagesPub.state === 'requested' ? 'requested' : 'no';
     // Every real row is 'overhaul' today - see the Campaign dimension's own comment above.
     var dataAttrs = 'data-status="' + status + '" data-assigned="' + esc(assignedVal) + '" data-collection="' + collection +
-      '" data-campaign="overhaul" data-flagged="' + (flagState.flagged ? 'yes' : '') + '"';
+      '" data-campaign="overhaul" data-flagged="' + (flagState.flagged ? 'yes' : '') + '" data-published="' + publishedVal + '"';
     var linkHtml = relPath
       ? '<a class="row-link" href="' + esc(relPath) + '" target="_blank" rel="noopener">' + inner + '<span class="row-arrow">Open →</span></a>'
       : '<div class="row-link row-link-muted">' + inner + '<span class="row-arrow row-arrow-muted">Not built yet</span></div>';
@@ -979,7 +985,7 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
   // the real data yet - same honest-placeholder shape as Type/Content: the
   // option exists so the vocabulary is already familiar once real per-release
   // tagging exists, rather than being a second UI change later.
-  var DIMENSION_ORDER = ['product', 'type', 'section', 'status', 'campaign', 'flagged'];
+  var DIMENSION_ORDER = ['product', 'type', 'section', 'status', 'campaign', 'flagged', 'published'];
   var DIMENSIONS = {
     product:  { label: 'Product',  options: [['SM', 'Scholarship Management'], ['DM', 'Donor Management']] },
     type:     { label: 'Type',     options: [['shots', 'Shots'], ['content', 'Content']] },
@@ -994,13 +1000,17 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     // only flagged rows. Same generic dimension machinery (chips, modal, localStorage) as
     // every other filter here, nothing flag-specific needed beyond this one entry.
     flagged:  { label: 'Flagged',  options: [['yes', 'Flagged for later']] },
+    // Reads the same publishRequested.images state the row's own badge renders from (2026-09-05,
+    // Milan: "publish should be filterable") - 'yes' = live badge showing "Images published",
+    // 'requested' = someone clicked Publish but it isn't confirmed live yet, 'no' = neither.
+    published: { label: 'Published', options: [['yes', 'Images published'], ['requested', 'Publish requested'], ['no', 'Not yet published']] },
   };
 
   // appliedFilters: the live, in-effect filter state. draftFilters: a working
   // copy edited inside the open modal, committed to appliedFilters only on
   // "Save Filters" (or discarded on "Cancel & Close") - mirrors the real
   // Task Board's own Apply-then-Save two-step exactly.
-  var appliedFilters = { product: ['SM'], type: [], section: [], status: [], campaign: [], flagged: [] };
+  var appliedFilters = { product: ['SM'], type: [], section: [], status: [], campaign: [], flagged: [], published: [] };
   var draftFilters = null;
   var editingDimension = null; // which dimension "Filter by" currently shows values for, inside the modal
 
@@ -1215,6 +1225,8 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     if (appliedFilters.status.length && appliedFilters.status.indexOf(status) === -1) return false;
     var flagged = row.getAttribute('data-flagged') || '';
     if (appliedFilters.flagged.length && appliedFilters.flagged.indexOf(flagged) === -1) return false;
+    var published = row.getAttribute('data-published') || 'no';
+    if (appliedFilters.published.length && appliedFilters.published.indexOf(published) === -1) return false;
     var assigneeSelect = document.getElementById('assignee-filter');
     var assignee = assigneeSelect ? assigneeSelect.value : '';
     if (assignee) {
