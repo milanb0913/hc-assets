@@ -40,17 +40,22 @@ html, body { margin: 0; padding: 0; background: var(--bg); }
 body { color: var(--ink); font-family: 'IBM Plex Sans', system-ui, sans-serif; line-height: 1.5; }
 a { color: inherit; }
 .masthead {
-  /* Deliberately NOT sticky (2026-09-05, Milan: zooming in to inspect a shot made the header
-     eat a growing share of the viewport - a fixed-CSS-px header naturally does that as zoom
-     shrinks the visible viewport's own CSS-px height). Scrolls away like everything else, so
-     it costs zero space the moment you've scrolled down to look at something.
-     Sizes below shrunk a second pass, same day - non-sticky alone didn't help while zoomed in
-     near the TOP of the page (the first article or two), since the header hadn't been scrolled
-     past yet. This is the other half of the fix: less absolute height, so it stays small at
-     any zoom level, not just once you've scrolled below it. */
+  /* THIRD pass, same day (2026-09-05, Milan): plain non-sticky didn't help while zoomed in near
+     the very top of the page - there was nothing to scroll past yet. Milan's actual ask: freeze
+     it in place at the top (so it's there and readable when you land on the page), then once
+     you've scrolled far enough that you're clearly not reading the header anymore, have it
+     "swoop up and away" so it stops costing any space at all - not sticky-forever, not
+     gone-immediately, but frozen-then-gone. position:fixed (not sticky) so it can genuinely
+     leave zero footprint once translated away - a sticky element keeps reserving its layout
+     box even while transformed off-screen, which would leave a dead gap instead of reclaiming
+     the space. .layout's own top padding is set by JS to match this element's real height
+     (masthead-toggle in the client script), and collapses to 0 in lockstep when it swoops away. */
+  position: fixed; top: 0; left: 0; right: 0; z-index: 10;
   background: var(--surface); border-bottom: 1px solid var(--border);
   padding: 14px clamp(20px, 5vw, 56px) 12px;
+  transition: transform 0.28s ease;
 }
+.masthead.masthead-away { transform: translateY(-100%); }
 .masthead h1 { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; font-size: 1.15rem; margin: 0 0 6px; }
 .hero-stats { display: flex; align-items: baseline; gap: 24px; margin-bottom: 0; }
 .hero-stat { display: flex; align-items: baseline; gap: 5px; }
@@ -59,7 +64,7 @@ a { color: inherit; }
 .hero-stat .lbl { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
 .sync-status { font-size: 0.7rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
 .save-status-error { color: var(--fail); font-weight: 600; }
-.layout { max-width: 1280px; margin: 0 auto; padding: 24px clamp(16px, 5vw, 56px) 100px; }
+.layout { max-width: 1280px; margin: 0 auto; padding: 24px clamp(16px, 5vw, 56px) 100px; transition: padding-top 0.28s ease; }
 main#main-content { min-width: 0; }
 /* Replaces the old sticky left sidebar (2026-09-05, Milan: "kind of janky", and its
    position: sticky; top: 190px was itself brittle - a hardcoded offset that only matched the
@@ -1677,8 +1682,36 @@ main#main-content { min-width: 0; }
       });
   }
 
+  // Freeze-then-swoop masthead (2026-09-05, Milan): fixed in place at the top so it's readable
+  // on landing, then translates fully off-screen once you've scrolled past a small threshold -
+  // "swoops up and away" rather than staying pinned forever (the earlier sticky version) or
+  // costing space at zoom while still at the very top (the plain non-sticky version, which
+  // never even engaged since there was nothing above the fold to scroll past). `.layout`'s own
+  // top padding tracks the masthead's real height via ResizeObserver, so it reserves exactly
+  // enough space to not be covered while frozen, and collapses to zero once it's gone.
+  function setupMastheadCollapse() {
+    var masthead = document.querySelector('.masthead');
+    var layout = document.querySelector('.layout');
+    if (!masthead || !layout) return;
+    var away = false;
+    function applyPadding() {
+      layout.style.paddingTop = away ? '0px' : masthead.offsetHeight + 'px';
+    }
+    if (window.ResizeObserver) new ResizeObserver(applyPadding).observe(masthead);
+    applyPadding();
+    var THRESHOLD = 32;
+    window.addEventListener('scroll', function () {
+      var next = window.scrollY > THRESHOLD;
+      if (next === away) return;
+      away = next;
+      masthead.classList.toggle('masthead-away', away);
+      applyPadding();
+    }, { passive: true });
+  }
+
   restoreFilterState();
   render();
   loadSyncCounts();
+  setupMastheadCollapse();
 })();
 </script>

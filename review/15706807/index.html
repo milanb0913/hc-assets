@@ -27,14 +27,27 @@ html, body { margin: 0; padding: 0; background: var(--bg); }
 body { color: var(--ink); font-family: 'IBM Plex Sans', system-ui, sans-serif; line-height: 1.5; }
 a { color: var(--accent); }
 .masthead {
-  /* Not sticky (2026-08-31, Milan) - a per-article page has no persistent control (like
-     the hub's Filters button) worth keeping pinned, and a sticky header scales with browser
-     zoom same as everything else, so it eats a growing, PERSISTENT share of the viewport for
-     the whole time someone's zoomed in comparing shots closely - the exact complaint. Scrolls
-     away normally now, same as any other page content, so its cost is paid once, not per-scroll. */
+  /* SECOND pass (2026-09-05, Milan) - plain non-sticky (2026-08-31 note below, kept for
+     history) didn't actually fix the complaint: comparing legacy-vs-new shots often happens on
+     the FIRST pair, at the very top of the page, before there's anything to scroll past. The
+     real ask: freeze it in place on landing (readable, not fighting for space), then once
+     you've scrolled far enough that you're clearly done reading it, have it swoop fully
+     off-screen so it costs zero space instead of persisting like an old sticky header would.
+     `position: fixed` (not sticky) so translating it away actually frees the space - a sticky
+     element keeps reserving its layout box even while transformed off-screen. `main`'s own top
+     padding is set by JS to match this element's real height (see the client script's
+     masthead-collapse setup) and collapses to 0 in lockstep once it's gone.
+     ORIGINAL 2026-08-31 note, superseded above: "Not sticky - a per-article page has no
+     persistent control worth keeping pinned, and a sticky header scales with browser zoom same
+     as everything else, so it eats a growing, PERSISTENT share of the viewport for the whole
+     time someone's zoomed in - the exact complaint. Scrolls away normally, so cost is paid
+     once." True as far as it went, but only once you'd actually scrolled past it. */
+  position: fixed; top: 0; left: 0; right: 0; z-index: 10;
   background: var(--surface); border-bottom: 1px solid var(--border);
   padding: 20px clamp(20px, 5vw, 56px); display: flex; align-items: baseline; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+  transition: transform 0.28s ease;
 }
+.masthead.masthead-away { transform: translateY(-100%); }
 .masthead-left { display: flex; flex-direction: column; gap: 6px; }
 .masthead h1 { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; font-size: 1.5rem; margin: 0; text-wrap: balance; }
 .hub-back { font-size: 0.78rem; color: var(--muted); text-decoration: none; }
@@ -54,7 +67,7 @@ a { color: var(--accent); }
 .reviewer-row input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
 .sync-status, .save-status { font-size: 0.72rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; max-width: 320px; text-align: right; }
 .save-status-error { color: var(--fail); font-weight: 600; }
-main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80px; }
+main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80px; transition: padding-top 0.28s ease; }
 .intro { color: var(--ink-soft); max-width: 72ch; margin: 28px 0 32px; font-size: 0.95rem; }
 .cards { display: flex; flex-direction: column; gap: 28px; }
 .pair { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px 20px; box-shadow: 0 1px 2px var(--shadow); }
@@ -451,7 +464,33 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
     reviewerInput.addEventListener('blur', function () { setReviewerName(reviewerInput.value); });
   }
 
+  // Freeze-then-swoop masthead (2026-09-05, Milan) - same behavior and same reasoning as the
+  // hub's own version (static-hub-client.js): fixed in place at the top so it's readable on
+  // landing, then translates fully off-screen past a small scroll threshold, freeing the space
+  // instead of persisting through a whole zoomed-in comparison session. `main`'s own top
+  // padding tracks the masthead's real height via ResizeObserver.
+  function setupMastheadCollapse() {
+    var masthead = document.querySelector('.masthead');
+    var main = document.querySelector('main');
+    if (!masthead || !main) return;
+    var away = false;
+    function applyPadding() {
+      main.style.paddingTop = away ? '0px' : masthead.offsetHeight + 'px';
+    }
+    if (window.ResizeObserver) new ResizeObserver(applyPadding).observe(masthead);
+    applyPadding();
+    var THRESHOLD = 32;
+    window.addEventListener('scroll', function () {
+      var next = window.scrollY > THRESHOLD;
+      if (next === away) return;
+      away = next;
+      masthead.classList.toggle('masthead-away', away);
+      applyPadding();
+    }, { passive: true });
+  }
+
   render();
   loadRows();
+  setupMastheadCollapse();
 })();
 </script>
