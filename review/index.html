@@ -1,4 +1,4 @@
-<title>HC Capture Shot Review</title>
+<title>HC Review Hub</title>
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHJlY3Qgd2lkdGg9JzMyJyBoZWlnaHQ9JzMyJyByeD0nNycgZmlsbD0nI2MyMTg1YicvPjxwYXRoIGQ9J005IDE2LjVsNC41IDQuNUwyMyAxMScgc3Ryb2tlPSd3aGl0ZScgc3Ryb2tlLXdpZHRoPSczLjInIGZpbGw9J25vbmUnIHN0cm9rZS1saW5lY2FwPSdyb3VuZCcgc3Ryb2tlLWxpbmVqb2luPSdyb3VuZCcvPjwvc3ZnPg==">
 <style id="head-styles">
 @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
@@ -43,17 +43,21 @@ a { color: inherit; }
   /* Deliberately NOT sticky (2026-09-05, Milan: zooming in to inspect a shot made the header
      eat a growing share of the viewport - a fixed-CSS-px header naturally does that as zoom
      shrinks the visible viewport's own CSS-px height). Scrolls away like everything else, so
-     it costs zero space the moment you've scrolled down to look at something. */
+     it costs zero space the moment you've scrolled down to look at something.
+     Sizes below shrunk a second pass, same day - non-sticky alone didn't help while zoomed in
+     near the TOP of the page (the first article or two), since the header hadn't been scrolled
+     past yet. This is the other half of the fix: less absolute height, so it stays small at
+     any zoom level, not just once you've scrolled below it. */
   background: var(--surface); border-bottom: 1px solid var(--border);
-  padding: 22px clamp(20px, 5vw, 56px) 18px;
+  padding: 14px clamp(20px, 5vw, 56px) 12px;
 }
-.masthead h1 { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; font-size: 1.6rem; margin: 0 0 10px; }
-.hero-stats { display: flex; gap: 32px; margin-bottom: 6px; }
-.hero-stat { display: flex; flex-direction: column; gap: 2px; }
-.hero-stat .num { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; font-size: 1.9rem; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
-.hero-stat .num .of { color: var(--muted); font-size: 1.15rem; font-weight: 500; }
-.hero-stat .lbl { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
-.sync-status { font-size: 0.78rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
+.masthead h1 { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; font-size: 1.15rem; margin: 0 0 6px; }
+.hero-stats { display: flex; align-items: baseline; gap: 24px; margin-bottom: 0; }
+.hero-stat { display: flex; align-items: baseline; gap: 5px; }
+.hero-stat .num { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; font-size: 1.15rem; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
+.hero-stat .num .of { color: var(--muted); font-size: 0.85rem; font-weight: 500; }
+.hero-stat .lbl { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
+.sync-status { font-size: 0.7rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
 .save-status-error { color: var(--fail); font-weight: 600; }
 .layout { max-width: 1280px; margin: 0 auto; padding: 24px clamp(16px, 5vw, 56px) 100px; }
 main#main-content { min-width: 0; }
@@ -62,11 +66,11 @@ main#main-content { min-width: 0; }
    masthead's height by coincidence). Same QA-breakdown numbers, now inline in the masthead as
    small clickable pills - each one toggles that status in/out of the Status filter directly,
    no modal needed for the common case of "just show me one bucket". */
-.status-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.status-pills { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 .status-pill {
-  font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.72rem; font-weight: 700;
-  letter-spacing: 0.02em; padding: 4px 10px 4px 12px; border-radius: 100px; border: 1.5px solid transparent;
-  cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.66rem; font-weight: 700;
+  letter-spacing: 0.02em; padding: 3px 8px 3px 10px; border-radius: 100px; border: 1.5px solid transparent;
+  cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;
   opacity: 0.62; transition: opacity 0.12s, border-color 0.12s;
 }
 .status-pill:hover { opacity: 1; }
@@ -193,7 +197,7 @@ main#main-content { min-width: 0; }
 /* ---- Filters bar: a button + applied-filter chips, modeled on the real
    AwardSpring Task Board (2026-08-31 rebuild) - replaces three always-visible
    checkbox rows that read as clutter before any content. ---- */
-.filters-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+.filters-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
 .filters-btn {
   display: inline-flex; align-items: center; gap: 7px; font-family: inherit; font-size: 0.84rem; font-weight: 600;
   color: var(--ink); background: var(--surface-sunken); border: 1.5px solid var(--border); border-radius: 100px;
@@ -310,7 +314,7 @@ main#main-content { min-width: 0; }
 .content-gate p { color: var(--muted); font-size: 0.9rem; margin: 0; }
 </style>
 <div class="masthead">
-  <h1>HC Capture — Shot Review</h1>
+  <h1>HC Review Hub</h1>
   <div id="headline" class="hero-stats"></div>
   <span id="sync-status" class="sync-status"></span>
   <div class="filters-bar">
@@ -1082,7 +1086,12 @@ main#main-content { min-width: 0; }
 
   function appliedChipsHtml() {
     var chips = DIMENSION_ORDER.filter(function (d) { return appliedFilters[d] && appliedFilters[d].length; }).map(function (d) {
-      var labels = appliedFilters[d].map(function (v) { return optionLabel(d, v); }).join(', ');
+      // Status is deliberately terse here (2026-09-05, Milan: header still too tall even after
+      // dropping sticky) - the status pills right below already show exactly which buckets are
+      // active, so repeating "Published, Started - Team Needed, ..." as a second, often
+      // multi-line chip was pure duplication. Keep it a normal, editable/removable chip, just
+      // without the value list.
+      var labels = d === 'status' ? appliedFilters[d].length + ' selected' : appliedFilters[d].map(function (v) { return optionLabel(d, v); }).join(', ');
       return '<span class="applied-chip">' +
         '<button type="button" class="chip-edit" data-dim="' + d + '" title="Edit ' + esc(DIMENSIONS[d].label) + '">✎</button>' +
         '<b>' + esc(DIMENSIONS[d].label) + ':</b> ' + esc(labels) +
