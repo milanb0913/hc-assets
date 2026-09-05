@@ -40,7 +40,11 @@ html, body { margin: 0; padding: 0; background: var(--bg); }
 body { color: var(--ink); font-family: 'IBM Plex Sans', system-ui, sans-serif; line-height: 1.5; }
 a { color: inherit; }
 .masthead {
-  position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--border);
+  /* Deliberately NOT sticky (2026-09-05, Milan: zooming in to inspect a shot made the header
+     eat a growing share of the viewport - a fixed-CSS-px header naturally does that as zoom
+     shrinks the visible viewport's own CSS-px height). Scrolls away like everything else, so
+     it costs zero space the moment you've scrolled down to look at something. */
+  background: var(--surface); border-bottom: 1px solid var(--border);
   padding: 22px clamp(20px, 5vw, 56px) 18px;
 }
 .masthead h1 { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; font-size: 1.6rem; margin: 0 0 10px; }
@@ -51,22 +55,29 @@ a { color: inherit; }
 .hero-stat .lbl { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
 .sync-status { font-size: 0.78rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
 .save-status-error { color: var(--fail); font-weight: 600; }
-.layout { display: flex; align-items: flex-start; gap: 28px; max-width: 1280px; margin: 0 auto; padding: 24px clamp(16px, 5vw, 56px) 100px; }
-.sidebar {
-  flex: 0 0 210px; position: sticky; top: 190px; display: flex; flex-direction: column; gap: 9px;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px;
-  box-shadow: 0 1px 2px var(--shadow);
+.layout { max-width: 1280px; margin: 0 auto; padding: 24px clamp(16px, 5vw, 56px) 100px; }
+main#main-content { min-width: 0; }
+/* Replaces the old sticky left sidebar (2026-09-05, Milan: "kind of janky", and its
+   position: sticky; top: 190px was itself brittle - a hardcoded offset that only matched the
+   masthead's height by coincidence). Same QA-breakdown numbers, now inline in the masthead as
+   small clickable pills - each one toggles that status in/out of the Status filter directly,
+   no modal needed for the common case of "just show me one bucket". */
+.status-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.status-pill {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.02em; padding: 4px 10px 4px 12px; border-radius: 100px; border: 1.5px solid transparent;
+  cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
+  opacity: 0.62; transition: opacity 0.12s, border-color 0.12s;
 }
-.sidebar h3 { margin: 0 0 2px; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
-.sidebar-stat { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.84rem; color: var(--ink-soft); }
-.sidebar-stat .n { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink); }
-.sidebar-stat.stat-blocked .n { color: var(--accent); }
-.sidebar-stat.stat-fail .n { color: var(--fail); }
-.sidebar-stat.stat-review .n { color: var(--pending); }
-.sidebar-stat.stat-ready .n { color: var(--pass); }
-.sidebar-stat.stat-muted .n { color: var(--muted); }
-.sidebar-stat.sidebar-total { padding-top: 7px; margin-top: 3px; border-top: 1px dashed var(--border); color: var(--muted); }
-main#main-content { flex: 1 1 auto; min-width: 0; }
+.status-pill:hover { opacity: 1; }
+.status-pill-active { opacity: 1; border-color: currentColor; }
+.status-pill-n { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+.status-pill.status-fail { background: var(--fail-soft); color: var(--fail); }
+.status-pill.status-review { background: var(--pending-soft); color: var(--pending); }
+.status-pill.status-blocked { background: var(--accent-soft); color: var(--accent); }
+.status-pill.status-ready { background: var(--pass-soft); color: var(--pass); }
+.status-pill.status-published { background: var(--info-soft); color: var(--info); }
+.status-pill.status-muted { background: var(--surface-sunken); color: var(--muted); }
 .hc-section { margin-bottom: 44px; }
 .hc-section > h2 {
   font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; font-size: 1.4rem;
@@ -310,6 +321,7 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     <input type="text" id="search-input" class="search-input" placeholder="Search title or #id...">
     <span class="filter-count" id="filter-count"></span>
   </div>
+  <div id="status-pills" class="status-pills"></div>
 </div>
 <datalist id="assignee-list"><option value="MB">MB</option><option value="SL">SL</option></datalist>
 <div class="modal-overlay" id="backlog-modal-overlay" hidden>
@@ -340,7 +352,6 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
   </div>
 </div>
 <div class="layout">
-  <aside class="sidebar" id="sidebar"><div id="sidebar-stats"></div></aside>
   <main id="main-content"></main>
 </div>
 <script id="data-structure" type="application/json">{"_comment":"Real Scholarship Management HC navigation structure, fetched live 2026-08-25 from https://intercom.help/awardspringsupport/en-us/collections/19677064-scholarship-management and its 51 subsection pages. Section order and article order within each section match the live site. Used by build-hub.mjs to group the review-doc hub the way readers actually navigate the HC, instead of an arbitrary list.","collection":"Scholarship Management","sections":[{"name":"Tutorials","subsections":[{"name":"New to AwardSpring: Start Here","articles":["15706629","15706630"]},{"name":"Application Cycle Setup","articles":["15706669","15706670"]}]},{"name":"Scholarships","subsections":[{"name":"Scholarships: Getting Started","articles":["15706640","15706641","15706642","15706643"]},{"name":"Managing Scholarships","articles":["15706692","15706693","15706695","15706696","15706697","15706698","15706699"]},{"name":"Qualifications","articles":["15706760","15706761","15706762"]},{"name":"Additional Requirements / Follow-Ups","articles":["15706780","15706781","15706782","15706783","15706784"]},{"name":"Scholarship Funds","articles":["15706785"]}]},{"name":"Users","subsections":[{"name":"Users","articles":["16278044","16278034"]},{"name":"Users: Getting Started","articles":["15706638","15706639"]},{"name":"User Management (Admin Tools)","articles":["15706687","15706688","15706689","15706691"]},{"name":"Student Experience & Navigating Student Records","articles":["15706750","15706751","15706752","15706753","15706754","15706756","15706758","15706759"]}]},{"name":"Review Groups","subsections":[{"name":"Getting Started: Review Groups","articles":["15706636","15706637"]},{"name":"Creating & Setting Up Review Groups","articles":["15706681","15706682","15706683","15706684","15706685","15706686"]},{"name":"Reviewer Experience","articles":["15706779"]}]},{"name":"Reports","subsections":[{"name":"Getting Started: Reports","articles":["15706632","15706633","15706634"]},{"name":"Smart Reports","articles":["15706677","15706678","15706679"]},{"name":"Static Reports","articles":["15706718","15706719","15706720","15706721","15706722","15706723","15706724","15706725","15706726","15706727","15706728","15706729","15706730","15706731","15706732","15724310"]}]},{"name":"Application","subsections":[{"name":"Getting Started: Application","articles":["15706631"]},{"name":"Application Management","articles":["15706671","15706673","15706674","15706675","15706676"]}]},{"name":"Awarding","subsections":[{"name":"Getting Started: Awarding","articles":["15706626","15706628"]},{"name":"Awarding Process","articles":["15706665","15706666","15706667"]},{"name":"Notifications","articles":["15706717"]},{"name":"Renewables","articles":["15706775","15706776","15706777","15706778"]}]},{"name":"Task Board","subsections":[{"name":"Task Board Overview","articles":["15706596"]},{"name":"Getting Started: Scholarship Tasks (Follow-Ups)","articles":["15706624","15706625"]},{"name":"Setting Up Scholarship Tasks (Follow-Ups)","articles":["15706662","15706663"]},{"name":"Managing Scholarship Tasks (Follow-Ups)","articles":["15706715","15706716"]},{"name":"Student Experience","articles":["15706774"]},{"name":"Manual Tasks","articles":["15706700","15706701","15706703"]}]},{"name":"Communications","subsections":[{"name":"Templates & Configuration","articles":["15706617","15706618","15706619","15706620","15706621","15706622"]},{"name":"Automatic Communications","articles":["15706661"]},{"name":"Common Use Cases","articles":["15706713"]}]},{"name":"Departments","subsections":[{"name":"Departments","articles":["16278045"]},{"name":"Creating & Setting Up Departments","articles":["15706659","15706660"]},{"name":"Managing Department Admins","articles":["15706709","15706710","15706711","15706712"]},{"name":"Department Experience","articles":["15706773"]}]},{"name":"Donors","subsections":[{"name":"Getting Started: Donors","articles":["15706615"]},{"name":"Donor Experience","articles":["15706658"]}]},{"name":"SpringIQ","subsections":[{"name":"AI Tools","articles":["15706611","15706612","15706613","15706614"]}]},{"name":"SpringAPIs","subsections":[{"name":"Getting Started: SpringAPIs","articles":["15706609","15706610"]},{"name":"Setup & Authentication","articles":["15706655","15706656","15706657"]},{"name":"Error Handling","articles":["15706708"]},{"name":"Endpoints","articles":["15706764","15706766","15706767","15706769","15706770","15706772"]}]},{"name":"Imports","subsections":[{"name":"Getting Started: Imports","articles":["15706605","15706606","15706607"]},{"name":"Common Errors & Troubleshooting","articles":["15706646","15706647","15706648","15706649","15706651","15706652","15706653"]}]},{"name":"Settings","subsections":[{"name":"Award Cycle","articles":["15706608"]},{"name":"Customize Your AwardSpring Site","articles":["15706654"]},{"name":"External Requests","articles":["15706706","15706707"]},{"name":"Tools","articles":["15706763"]}]},{"name":"Webinars","subsections":[{"name":"Webinars","articles":["15706788","15706789"]}]},{"name":"User Guides","subsections":[{"name":"User Type","articles":["15706601","15706603","15706604"]}]},{"name":"FAQs","subsections":[{"name":"Core Topics","articles":["15706597","15706599","15706600"]},{"name":"Processes & Features","articles":["15706644","15706645"]},{"name":"Troubleshooting & Edge Cases","articles":["15706704","15706705"]}]}]}</script>
@@ -868,18 +879,29 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
     );
   }
 
-  // Every row here is one of STATUS_ORDER's real (non-DM) buckets, so the
-  // sum of every "n" always equals "In scope" exactly - no bucket is silently
-  // dropped the way no-data/no-due-shots/no-shots used to be.
-  var SIDEBAR_ROWS = ['published', 'blocked', 'has-fails', 'needs-review', 'ready', 'no-data', 'no-due-shots', 'no-shots'];
-  function sidebarHtml() {
+  // Every real (non-DM) STATUS_ORDER bucket gets a pill, so they always sum to exactly
+  // inScope - same invariant the old sidebar kept, just inline in the masthead now (2026-09-05,
+  // Milan: the sidebar was "kind of janky" - replaced rather than patched). Each pill toggles
+  // itself in/out of the Status filter directly - same appliedFilters.status array the Filters
+  // modal's own Status checkboxes read and write, so the two stay in sync automatically.
+  function statusPillsHtml() {
     var h = computeHeadlineCounts();
-    var rows = SIDEBAR_ROWS.map(function (k) {
+    var pills = STATUS_ORDER.filter(function (k) { return k !== 'out-of-scope'; }).map(function (k) {
       var meta = STATUS_META[k];
-      return '<div class="sidebar-stat ' + meta.cls + '"><span>' + esc(meta.label) + '</span><span class="n">' + h.counts[k] + '</span></div>';
+      var active = appliedFilters.status.indexOf(k) !== -1;
+      return '<button type="button" class="status-pill ' + meta.cls + (active ? ' status-pill-active' : '') +
+        '" data-toggle-status="' + k + '" title="Toggle ' + esc(meta.label) + ' in the Status filter">' +
+        esc(meta.label) + '<span class="status-pill-n">' + h.counts[k] + '</span></button>';
     }).join('');
-    return '<h3>QA breakdown</h3>' + rows +
-      '<div class="sidebar-stat stat-muted sidebar-total"><span>In scope</span><span class="n">' + h.inScope + '</span></div>';
+    return pills + '<button type="button" class="status-pill status-muted" disabled>In scope<span class="status-pill-n">' + h.inScope + '</span></button>';
+  }
+  // Re-renders just the pill row's active/inactive state - needed anywhere appliedFilters.status
+  // can change OTHER than clicking a pill itself (the modal's own checkboxes, the applied-filter
+  // chip's remove button, Reset filters), so the two stay visually in sync no matter which UI
+  // was used to change the Status filter.
+  function refreshStatusPills() {
+    var pillsEl = document.getElementById('status-pills');
+    if (pillsEl) pillsEl.innerHTML = statusPillsHtml();
   }
 
   // "What's Left" (2026-09-02, Milan): the QA breakdown above answers "is THIS article done" -
@@ -1191,6 +1213,7 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
       saveFilterState();
       closeModal();
       applyFilters();
+      refreshStatusPills();
     });
     document.getElementById('modal-reset-btn').addEventListener('click', function () {
       DIMENSION_ORDER.forEach(function (d) { draftFilters[d] = []; });
@@ -1210,12 +1233,14 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
         appliedFilters[removeBtn.getAttribute('data-dim')] = [];
         saveFilterState();
         applyFilters();
+        refreshStatusPills();
         return;
       }
       if (e.target.id === 'reset-filters-btn') {
         DIMENSION_ORDER.forEach(function (d) { appliedFilters[d] = []; });
         saveFilterState();
         applyFilters();
+        refreshStatusPills();
       }
       var pubBtn = e.target.closest && e.target.closest('.publish-btn');
       if (pubBtn) {
@@ -1233,6 +1258,16 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
         e.preventDefault(); // row-head has no enclosing <a>, same reasoning as publish-btn above
         toggleFlag(flagBtn.getAttribute('data-flag-id'), flagBtn.getAttribute('data-flag-title'),
           flagBtn.getAttribute('data-flag-state') === 'flagged', flagBtn);
+      }
+      var statusPill = e.target.closest && e.target.closest('.status-pill[data-toggle-status]');
+      if (statusPill) {
+        var key = statusPill.getAttribute('data-toggle-status');
+        var idx = appliedFilters.status.indexOf(key);
+        if (idx === -1) appliedFilters.status.push(key); else appliedFilters.status.splice(idx, 1);
+        saveFilterState();
+        applyFilters();
+        refreshStatusPills();
+        return;
       }
     });
     var assigneeSelect = document.getElementById('assignee-filter');
@@ -1483,8 +1518,8 @@ main#main-content { flex: 1 1 auto; min-width: 0; }
 
   function render() {
     document.getElementById('headline').innerHTML = heroStatsHtml();
-    var sidebarStats = document.getElementById('sidebar-stats');
-    if (sidebarStats) sidebarStats.innerHTML = sidebarHtml();
+    var statusPills = document.getElementById('status-pills');
+    if (statusPills) statusPills.innerHTML = statusPillsHtml();
     var list = document.getElementById('assignee-list');
     if (list) list.innerHTML = assigneeOptionsHtml();
     var assigneeSelect = document.getElementById('assignee-filter');
