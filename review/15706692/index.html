@@ -7,6 +7,7 @@
   --ink-soft: #4b5266; --muted: #767e91; --border: #dfe2e9; --accent: #c2185b;
   --pass: #1a7a4c; --pass-soft: #e4f5ec; --fail: #b3261e; --fail-soft: #fbe9e7;
   --pending: #8a6d00; --pending-soft: #fbf3d9; --shadow: rgba(30, 36, 48, 0.10);
+  --info: #1D4ED8; --info-soft: #e5ecfc;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -14,6 +15,7 @@
     --ink-soft: #b7bdcc; --muted: #8b91a3; --border: #2d3444; --accent: #ec5c8d;
     --pass: #4fd08c; --pass-soft: #16281f; --fail: #ff6b61; --fail-soft: #2c1815;
     --pending: #e0c04a; --pending-soft: #2c2611; --shadow: rgba(0, 0, 0, 0.45);
+    --info: #60A5FA; --info-soft: #1a2540;
   }
 }
 :root[data-theme="dark"] {
@@ -21,6 +23,7 @@
   --ink-soft: #b7bdcc; --muted: #8b91a3; --border: #2d3444; --accent: #ec5c8d;
   --pass: #4fd08c; --pass-soft: #16281f; --fail: #ff6b61; --fail-soft: #2c1815;
   --pending: #e0c04a; --pending-soft: #2c2611; --shadow: rgba(0, 0, 0, 0.45);
+  --info: #60A5FA; --info-soft: #1a2540;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; background: var(--bg); }
@@ -50,10 +53,20 @@ a { color: var(--accent); }
 .masthead.masthead-away { transform: translateY(-100%); }
 .masthead-left { display: flex; flex-direction: column; gap: 6px; }
 .masthead h1 { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; font-size: 1.5rem; margin: 0; text-wrap: balance; }
+.nav-row { display: flex; align-items: center; gap: 14px; }
 .hub-back { font-size: 0.78rem; color: var(--muted); text-decoration: none; }
 .hub-back:hover { color: var(--accent); }
+.article-nav-prev, .article-nav-next { font-size: 0.78rem; color: var(--accent); text-decoration: none; white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.article-nav-prev:hover, .article-nav-next:hover { text-decoration: underline; }
 .hc-link { font-size: 0.78rem; color: var(--accent); text-decoration: none; }
 .hc-link:hover { text-decoration: underline; }
+.article-status { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 10px; border-radius: 100px; white-space: nowrap; align-self: flex-start; }
+.article-status:empty { display: none; }
+.article-status-published { background: var(--info-soft); color: var(--info); }
+.article-status-ready { background: var(--pass-soft); color: var(--pass); }
+.article-status-fails { background: var(--fail-soft); color: var(--fail); }
+.article-status-review { background: var(--pending-soft); color: var(--pending); }
+.article-status-progress { background: var(--surface-sunken); color: var(--muted); }
 .masthead-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 .stats { display: flex; gap: 14px; font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; font-variant-numeric: tabular-nums; }
 .stat b { font-size: 0.95rem; }
@@ -103,6 +116,23 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
 .vbtn-fail.active { background: var(--fail-soft); border-color: var(--fail); color: var(--fail); }
 .imgwrap.awaiting { display: flex; align-items: center; justify-content: center; min-height: 120px; }
 .awaiting-msg { color: var(--pending); font-size: 0.85rem; font-weight: 600; padding: 20px; text-align: center; }
+.reason-row { display: flex; gap: 8px; margin-top: 10px; }
+.reason-btn {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.74rem; font-weight: 600;
+  padding: 5px 12px; border-radius: 100px; cursor: pointer; border: 1.5px solid var(--border);
+  background: var(--surface-sunken); color: var(--muted); transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.reason-btn:hover { border-color: var(--muted); }
+.reason-btn-recapture.active { background: var(--info-soft); border-color: var(--info); color: var(--info); }
+.reason-btn-annotate.active { background: var(--pending-soft); border-color: var(--pending); color: var(--pending); }
+.reason-btn-content.active { background: var(--fail-soft); border-color: var(--accent); color: var(--accent); }
+.reason-chip {
+  display: inline-block; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase; padding: 3px 10px; border-radius: 100px; margin-bottom: 6px;
+}
+.reason-chip-recapture { background: var(--info-soft); color: var(--info); }
+.reason-chip-annotate { background: var(--pending-soft); color: var(--pending); }
+.reason-chip-content { background: var(--fail-soft); color: var(--accent); }
 .notes-row { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
 .notes-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 .notes-input {
@@ -125,12 +155,17 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
 </style>
 <div class="masthead">
   <div class="masthead-left">
-    <a class="hub-back" href="../index.html">&larr; All articles</a>
+    <div class="nav-row">
+      <a class="hub-back" href="../index.html">&larr; All articles</a>
+      <a class="article-nav-prev" href="../15706693/index.html" title="Custom Scholarship Fields">&larr; Previous article</a>
+    </div>
     <h1>Hiding Qualifications and Scholarships from Applicants — Shot Review</h1>
+    <span id="article-status" class="article-status"></span>
     <a class="hc-link" href="https://intercom.help/awardspringsupport/en-us/articles/15706692-hiding-qualifications-and-scholarships-from-applicants" target="_blank" rel="noopener">View live on Help Center &rarr;</a>
     <div id="stats" class="stats"></div>
   </div>
   <div class="masthead-right">
+    <a class="article-nav-next" href="../15706642/index.html" title="What Is Auto-Apply?">Next article &rarr;</a>
     <span class="reviewer-row">Reviewing as <input type="text" id="reviewer-name" placeholder="your name"></span>
     <span id="sync-status" class="sync-status"></span>
   </div>
@@ -140,7 +175,7 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
   <div id="cards" class="cards"></div>
 </main>
 <script id="data-shots" type="application/json">[{"id":"hide-01-02-settings-scholarships-path","legacy":"data:image/png;base64,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","new_":"https://milanb0913.github.io/hc-assets/staging/PROD_SM_Managing_Scholarships_HidingQualificationsAndScholarshipsFromApplicants_hide-01-02-settings-scholarships-path_boxed.png","caption":"","dueForCapture":true,"doNotRecapture":false,"notAScreenshot":false,"blockedForTeam":false,"blockedReason":null}]</script>
-<script id="data-meta" type="application/json">{"articleId":"15706692","articleTitle":"Hiding Qualifications and Scholarships from Applicants","docTitle":"Hiding Qualifications and Scholarships from Applicants — Shot Review","intro":"Legacy vs. current for every shot in this article. Click Pass or Fail to record a verdict, or add a note — both are saved to the shared review sheet immediately.","syncEndpoint":"https://script.google.com/macros/s/AKfycbwlQAH9fZwBYpNUOXoDvnP53Yodv8APLAoWdgmNEfKfBLSwIK4MsE3KtJ3igxExw5H8/exec","hubUrl":"../index.html","hcUrl":"https://intercom.help/awardspringsupport/en-us/articles/15706692-hiding-qualifications-and-scholarships-from-applicants"}</script>
+<script id="data-meta" type="application/json">{"articleId":"15706692","articleTitle":"Hiding Qualifications and Scholarships from Applicants","docTitle":"Hiding Qualifications and Scholarships from Applicants — Shot Review","intro":"Legacy vs. current for every shot in this article. Click Pass or Fail to record a verdict, or add a note — both are saved to the shared review sheet immediately.","syncEndpoint":"https://script.google.com/macros/s/AKfycbwlQAH9fZwBYpNUOXoDvnP53Yodv8APLAoWdgmNEfKfBLSwIK4MsE3KtJ3igxExw5H8/exec","hubUrl":"../index.html","hcUrl":"https://intercom.help/awardspringsupport/en-us/articles/15706692-hiding-qualifications-and-scholarships-from-applicants","prevUrl":"../15706693/index.html","prevTitle":"Custom Scholarship Fields","nextUrl":"../15706642/index.html","nextTitle":"What Is Auto-Apply?"}</script>
 <script id="render-script">// Client-side runtime for the STATIC (GitHub Pages) per-article shot-review
 // page. Sibling of review-doc-client.js (the claude.ai Artifact version) —
 // same card layout/shot data, but state lives in the Sheet behind
@@ -185,6 +220,21 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
     var found = null;
     rowsByShot[shotId].forEach(function (r) { if (r.reviewer === name) found = r; });
     return found;
+  }
+
+  // reasons comes back from the Sheet as a '; '-joined string (server can store several; we
+  // only ever write one today - Recapture/Annotate/Content are mutually exclusive fix types for
+  // a single Fail verdict, added 2026-09-05 so a later job can tell "needs a recapture" apart
+  // from "needs a manual annotation tweak" or "the content itself is wrong, a recapture won't
+  // help" without re-reading every note by hand). Local optimistic state stores the same plain
+  // string shape so both paths render identically.
+  var REASON_LABELS = { recapture: 'Recapture', annotate: 'Annotate', content: 'Content' };
+  function myReason(shotId) {
+    var mine = myRow(shotId);
+    if (!mine) return '';
+    var raw = mine.reasons;
+    if (Array.isArray(raw)) return raw[0] || '';
+    return String(raw || '').split(';')[0].trim();
   }
 
   function otherRows(shotId) {
@@ -272,6 +322,23 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
       }).join('') + '</div>';
   }
 
+  function reasonRowHtml(s, v) {
+    if (v !== 'fail') return ''; // a fix-type tag only means anything once something failed
+    var r = myReason(s.id);
+    return '<div class="reason-row">' +
+      ['recapture', 'annotate', 'content'].map(function (key) {
+        return '<button type="button" class="reason-btn reason-btn-' + key + (r === key ? ' active' : '') +
+          '" data-id="' + esc(s.id) + '" data-reason="' + key + '">' + REASON_LABELS[key] + '</button>';
+      }).join('') +
+      '</div>';
+  }
+
+  function reasonChipHtml(s) {
+    var r = myReason(s.id);
+    if (!r || !REASON_LABELS[r]) return '';
+    return '<span class="reason-chip reason-chip-' + r + '">' + REASON_LABELS[r] + '</span>';
+  }
+
   function shotCard(s, idx) {
     var mine = myRow(s.id);
     var v = mine ? mine.verdict : null;
@@ -303,10 +370,11 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
           '<div class="verdict-row">' +
             '<button type="button" class="vbtn vbtn-pass' + (v === 'pass' ? ' active' : '') + '" data-id="' + esc(s.id) + '" data-val="pass">Pass</button>' +
             '<button type="button" class="vbtn vbtn-fail' + (v === 'fail' ? ' active' : '') + '" data-id="' + esc(s.id) + '" data-val="fail">Fail</button>' +
-          '</div>'
+          '</div>' + reasonRowHtml(s, v)
           : '<p class="nothing-yet">Nothing to review yet - no new capture.</p>') +
         (s.new_ ?
           '<div class="notes-row">' +
+            reasonChipHtml(s) +
             '<label class="notes-label" for="notes-' + esc(s.id) + '">Your notes</label>' +
             '<textarea class="notes-input" id="notes-' + esc(s.id) + '" data-id="' + esc(s.id) + '" placeholder="Add a note - saved when you click away">' + esc(n) + '</textarea>' +
           '</div>' : '') +
@@ -315,8 +383,33 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
     );
   }
 
+  // A quick "can I skip this one" read at the top of the page, without leaving to check the hub
+  // (Milan, 2026-09-05: "put the QA status inside the article... so we can skip if we see its
+  // already done"). Computed entirely from what THIS page already has client-side (its own
+  // shots + its own fetched rows, including the __publish_images__ row if one exists) - no
+  // extra fetch, no build-time staleness risk (the exact bug class B128 fixed elsewhere). A
+  // deliberately smaller bucket set than the hub's own computeStatus() (no out-of-scope/no-shots/
+  // blocked distinction) - good enough for "skip or not," not a hub replacement.
+  function computeArticleStatus() {
+    if (rowsByShot && rowsByShot['__publish_images__']) {
+      var published = rowsByShot['__publish_images__'].some(function (r) { return r.verdict === 'published'; });
+      if (published) return { cls: 'article-status-published', label: 'Published' };
+    }
+    var counts = statCounts();
+    if (counts.fail > 0) return { cls: 'article-status-fails', label: 'Has fails' };
+    if (counts.neutral > 0) return { cls: 'article-status-review', label: 'Needs review' };
+    if (counts.oldCount > 0) return { cls: 'article-status-progress', label: 'In progress' };
+    return { cls: 'article-status-ready', label: 'Ready to publish' };
+  }
+
   function render() {
     var counts = statCounts();
+    var statusEl = document.getElementById('article-status');
+    if (statusEl) {
+      var st = computeArticleStatus();
+      statusEl.className = 'article-status ' + st.cls;
+      statusEl.textContent = st.label;
+    }
     document.getElementById('stats').innerHTML =
       '<span class="stat stat-neutral"><b>' + counts.newCount + '</b> new UI</span>' +
       '<span class="stat stat-neutral"><b>' + counts.oldCount + '</b> old UI</span>' +
@@ -327,6 +420,11 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
     Array.prototype.forEach.call(document.querySelectorAll('.vbtn'), function (btn) {
       btn.addEventListener('click', function () {
         setVerdict(btn.getAttribute('data-id'), btn.getAttribute('data-val'));
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.reason-btn'), function (btn) {
+      btn.addEventListener('click', function () {
+        setReason(btn.getAttribute('data-id'), btn.getAttribute('data-reason'));
       });
     });
     Array.prototype.forEach.call(document.querySelectorAll('.notes-input'), function (ta) {
@@ -393,10 +491,33 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
     var current = myRow(shotId);
     var next = (current && current.verdict === val) ? '' : val; // click again to clear
     var note = current ? (current.note || '') : '';
-    upsertLocalRow(shotId, { verdict: next, note: note });
+    // A fix-type reason only means anything for a Fail - clear it if the verdict is leaving
+    // Fail (Pass, or cleared back to unreviewed), so a stale "Recapture" tag can't sit on a
+    // shot that's since been marked Pass.
+    var reason = next === 'fail' ? myReason(shotId) : '';
+    upsertLocalRow(shotId, { verdict: next, note: note, reasons: reason });
     render();
     setSyncStatus('Saving…', false);
-    postRows([{ reviewer: name, article_id: meta.articleId, article: meta.articleTitle, slot: shotId, shot_id: shotId, verdict: next, reasons: [], note: note, boxes: [] }])
+    postRows([{ reviewer: name, article_id: meta.articleId, article: meta.articleTitle, slot: shotId, shot_id: shotId, verdict: next, reasons: reason ? [reason] : [], note: note, boxes: [] }])
+      .then(function (resp) {
+        if (resp && resp.ok) setSyncStatus('Saved', false);
+        else setSyncStatus('Not saved — ' + (resp && resp.error ? resp.error : 'unknown error'), true);
+      })
+      .catch(function (e) { setSyncStatus('Not saved — network error (' + e.message + ')', true); });
+  }
+
+  function setReason(shotId, val) {
+    var name = ensureReviewerName();
+    if (!name) return;
+    var current = myRow(shotId);
+    var currentReason = myReason(shotId);
+    var next = currentReason === val ? '' : val; // click again to clear
+    var verdict = current ? current.verdict : '';
+    var note = current ? (current.note || '') : '';
+    upsertLocalRow(shotId, { reasons: next });
+    render();
+    setSyncStatus('Saving…', false);
+    postRows([{ reviewer: name, article_id: meta.articleId, article: meta.articleTitle, slot: shotId, shot_id: shotId, verdict: verdict, reasons: next ? [next] : [], note: note, boxes: [] }])
       .then(function (resp) {
         if (resp && resp.ok) setSyncStatus('Saved', false);
         else setSyncStatus('Not saved — ' + (resp && resp.error ? resp.error : 'unknown error'), true);
@@ -416,9 +537,10 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
     var current = myRow(shotId);
     if (current && (current.note || '') === val) return;
     var verdict = current ? current.verdict : '';
+    var reason = myReason(shotId);
     upsertLocalRow(shotId, { note: val });
     setSyncStatus('Saving…', false);
-    postRows([{ reviewer: name, article_id: meta.articleId, article: meta.articleTitle, slot: shotId, shot_id: shotId, verdict: verdict, reasons: [], note: val, boxes: [] }])
+    postRows([{ reviewer: name, article_id: meta.articleId, article: meta.articleTitle, slot: shotId, shot_id: shotId, verdict: verdict, reasons: reason ? [reason] : [], note: val, boxes: [] }])
       .then(function (resp) {
         if (resp && resp.ok) setSyncStatus('Saved', false);
         else setSyncStatus('Not saved — ' + (resp && resp.error ? resp.error : 'unknown error'), true);

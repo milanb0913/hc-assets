@@ -7,6 +7,7 @@
   --ink-soft: #4b5266; --muted: #767e91; --border: #dfe2e9; --accent: #c2185b;
   --pass: #1a7a4c; --pass-soft: #e4f5ec; --fail: #b3261e; --fail-soft: #fbe9e7;
   --pending: #8a6d00; --pending-soft: #fbf3d9; --shadow: rgba(30, 36, 48, 0.10);
+  --info: #1D4ED8; --info-soft: #e5ecfc;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -14,6 +15,7 @@
     --ink-soft: #b7bdcc; --muted: #8b91a3; --border: #2d3444; --accent: #ec5c8d;
     --pass: #4fd08c; --pass-soft: #16281f; --fail: #ff6b61; --fail-soft: #2c1815;
     --pending: #e0c04a; --pending-soft: #2c2611; --shadow: rgba(0, 0, 0, 0.45);
+    --info: #60A5FA; --info-soft: #1a2540;
   }
 }
 :root[data-theme="dark"] {
@@ -21,6 +23,7 @@
   --ink-soft: #b7bdcc; --muted: #8b91a3; --border: #2d3444; --accent: #ec5c8d;
   --pass: #4fd08c; --pass-soft: #16281f; --fail: #ff6b61; --fail-soft: #2c1815;
   --pending: #e0c04a; --pending-soft: #2c2611; --shadow: rgba(0, 0, 0, 0.45);
+  --info: #60A5FA; --info-soft: #1a2540;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; background: var(--bg); }
@@ -50,10 +53,20 @@ a { color: var(--accent); }
 .masthead.masthead-away { transform: translateY(-100%); }
 .masthead-left { display: flex; flex-direction: column; gap: 6px; }
 .masthead h1 { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; font-size: 1.5rem; margin: 0; text-wrap: balance; }
+.nav-row { display: flex; align-items: center; gap: 14px; }
 .hub-back { font-size: 0.78rem; color: var(--muted); text-decoration: none; }
 .hub-back:hover { color: var(--accent); }
+.article-nav-prev, .article-nav-next { font-size: 0.78rem; color: var(--accent); text-decoration: none; white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.article-nav-prev:hover, .article-nav-next:hover { text-decoration: underline; }
 .hc-link { font-size: 0.78rem; color: var(--accent); text-decoration: none; }
 .hc-link:hover { text-decoration: underline; }
+.article-status { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 10px; border-radius: 100px; white-space: nowrap; align-self: flex-start; }
+.article-status:empty { display: none; }
+.article-status-published { background: var(--info-soft); color: var(--info); }
+.article-status-ready { background: var(--pass-soft); color: var(--pass); }
+.article-status-fails { background: var(--fail-soft); color: var(--fail); }
+.article-status-review { background: var(--pending-soft); color: var(--pending); }
+.article-status-progress { background: var(--surface-sunken); color: var(--muted); }
 .masthead-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 .stats { display: flex; gap: 14px; font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; font-variant-numeric: tabular-nums; }
 .stat b { font-size: 0.95rem; }
@@ -103,6 +116,23 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
 .vbtn-fail.active { background: var(--fail-soft); border-color: var(--fail); color: var(--fail); }
 .imgwrap.awaiting { display: flex; align-items: center; justify-content: center; min-height: 120px; }
 .awaiting-msg { color: var(--pending); font-size: 0.85rem; font-weight: 600; padding: 20px; text-align: center; }
+.reason-row { display: flex; gap: 8px; margin-top: 10px; }
+.reason-btn {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.74rem; font-weight: 600;
+  padding: 5px 12px; border-radius: 100px; cursor: pointer; border: 1.5px solid var(--border);
+  background: var(--surface-sunken); color: var(--muted); transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.reason-btn:hover { border-color: var(--muted); }
+.reason-btn-recapture.active { background: var(--info-soft); border-color: var(--info); color: var(--info); }
+.reason-btn-annotate.active { background: var(--pending-soft); border-color: var(--pending); color: var(--pending); }
+.reason-btn-content.active { background: var(--fail-soft); border-color: var(--accent); color: var(--accent); }
+.reason-chip {
+  display: inline-block; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase; padding: 3px 10px; border-radius: 100px; margin-bottom: 6px;
+}
+.reason-chip-recapture { background: var(--info-soft); color: var(--info); }
+.reason-chip-annotate { background: var(--pending-soft); color: var(--pending); }
+.reason-chip-content { background: var(--fail-soft); color: var(--accent); }
 .notes-row { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
 .notes-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 .notes-input {
@@ -125,12 +155,17 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
 </style>
 <div class="masthead">
   <div class="masthead-left">
-    <a class="hub-back" href="../index.html">&larr; All articles</a>
+    <div class="nav-row">
+      <a class="hub-back" href="../index.html">&larr; All articles</a>
+      <a class="article-nav-prev" href="../15706715/index.html" title="Managing Post Award Follow-Ups">&larr; Previous article</a>
+    </div>
     <h1>Not a Valid Number — Shot Review</h1>
+    <span id="article-status" class="article-status"></span>
     <a class="hc-link" href="https://intercom.help/awardspringsupport/en-us/articles/15706648-not-a-valid-number" target="_blank" rel="noopener">View live on Help Center &rarr;</a>
     <div id="stats" class="stats"></div>
   </div>
   <div class="masthead-right">
+    <a class="article-nav-next" href="../15706665/index.html" title="Applying Students in Bulk">Next article &rarr;</a>
     <span class="reviewer-row">Reviewing as <input type="text" id="reviewer-name" placeholder="your name"></span>
     <span id="sync-status" class="sync-status"></span>
   </div>
@@ -140,7 +175,7 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
   <div id="cards" class="cards"></div>
 </main>
 <script id="data-shots" type="application/json">[{"id":"nvn-01-import-exception-source-file","legacy":null,"new_":"https://milanb0913.github.io/hc-assets/staging/PROD_SM_SHARED_ImportSummary-SourceFileDownload.png","caption":"","dueForCapture":true,"doNotRecapture":false,"notAScreenshot":false,"blockedForTeam":false,"blockedReason":null}]</script>
-<script id="data-meta" type="application/json">{"articleId":"15706648","articleTitle":"Not a Valid Number","docTitle":"Not a Valid Number — Shot Review","intro":"Legacy vs. current for every shot in this article. Click Pass or Fail to record a verdict, or add a note — both are saved to the shared review sheet immediately.","syncEndpoint":"https://script.google.com/macros/s/AKfycbwlQAH9fZwBYpNUOXoDvnP53Yodv8APLAoWdgmNEfKfBLSwIK4MsE3KtJ3igxExw5H8/exec","hubUrl":"../index.html","hcUrl":"https://intercom.help/awardspringsupport/en-us/articles/15706648-not-a-valid-number"}</script>
+<script id="data-meta" type="application/json">{"articleId":"15706648","articleTitle":"Not a Valid Number","docTitle":"Not a Valid Number — Shot Review","intro":"Legacy vs. current for every shot in this article. Click Pass or Fail to record a verdict, or add a note — both are saved to the shared review sheet immediately.","syncEndpoint":"https://script.google.com/macros/s/AKfycbwlQAH9fZwBYpNUOXoDvnP53Yodv8APLAoWdgmNEfKfBLSwIK4MsE3KtJ3igxExw5H8/exec","hubUrl":"../index.html","hcUrl":"https://intercom.help/awardspringsupport/en-us/articles/15706648-not-a-valid-number","prevUrl":"../15706715/index.html","prevTitle":"Managing Post Award Follow-Ups","nextUrl":"../15706665/index.html","nextTitle":"Applying Students in Bulk"}</script>
 <script id="render-script">// Client-side runtime for the STATIC (GitHub Pages) per-article shot-review
 // page. Sibling of review-doc-client.js (the claude.ai Artifact version) —
 // same card layout/shot data, but state lives in the Sheet behind
@@ -185,6 +220,21 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
     var found = null;
     rowsByShot[shotId].forEach(function (r) { if (r.reviewer === name) found = r; });
     return found;
+  }
+
+  // reasons comes back from the Sheet as a '; '-joined string (server can store several; we
+  // only ever write one today - Recapture/Annotate/Content are mutually exclusive fix types for
+  // a single Fail verdict, added 2026-09-05 so a later job can tell "needs a recapture" apart
+  // from "needs a manual annotation tweak" or "the content itself is wrong, a recapture won't
+  // help" without re-reading every note by hand). Local optimistic state stores the same plain
+  // string shape so both paths render identically.
+  var REASON_LABELS = { recapture: 'Recapture', annotate: 'Annotate', content: 'Content' };
+  function myReason(shotId) {
+    var mine = myRow(shotId);
+    if (!mine) return '';
+    var raw = mine.reasons;
+    if (Array.isArray(raw)) return raw[0] || '';
+    return String(raw || '').split(';')[0].trim();
   }
 
   function otherRows(shotId) {
@@ -272,6 +322,23 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
       }).join('') + '</div>';
   }
 
+  function reasonRowHtml(s, v) {
+    if (v !== 'fail') return ''; // a fix-type tag only means anything once something failed
+    var r = myReason(s.id);
+    return '<div class="reason-row">' +
+      ['recapture', 'annotate', 'content'].map(function (key) {
+        return '<button type="button" class="reason-btn reason-btn-' + key + (r === key ? ' active' : '') +
+          '" data-id="' + esc(s.id) + '" data-reason="' + key + '">' + REASON_LABELS[key] + '</button>';
+      }).join('') +
+      '</div>';
+  }
+
+  function reasonChipHtml(s) {
+    var r = myReason(s.id);
+    if (!r || !REASON_LABELS[r]) return '';
+    return '<span class="reason-chip reason-chip-' + r + '">' + REASON_LABELS[r] + '</span>';
+  }
+
   function shotCard(s, idx) {
     var mine = myRow(s.id);
     var v = mine ? mine.verdict : null;
@@ -303,10 +370,11 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
           '<div class="verdict-row">' +
             '<button type="button" class="vbtn vbtn-pass' + (v === 'pass' ? ' active' : '') + '" data-id="' + esc(s.id) + '" data-val="pass">Pass</button>' +
             '<button type="button" class="vbtn vbtn-fail' + (v === 'fail' ? ' active' : '') + '" data-id="' + esc(s.id) + '" data-val="fail">Fail</button>' +
-          '</div>'
+          '</div>' + reasonRowHtml(s, v)
           : '<p class="nothing-yet">Nothing to review yet - no new capture.</p>') +
         (s.new_ ?
           '<div class="notes-row">' +
+            reasonChipHtml(s) +
             '<label class="notes-label" for="notes-' + esc(s.id) + '">Your notes</label>' +
             '<textarea class="notes-input" id="notes-' + esc(s.id) + '" data-id="' + esc(s.id) + '" placeholder="Add a note - saved when you click away">' + esc(n) + '</textarea>' +
           '</div>' : '') +
@@ -315,8 +383,33 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
     );
   }
 
+  // A quick "can I skip this one" read at the top of the page, without leaving to check the hub
+  // (Milan, 2026-09-05: "put the QA status inside the article... so we can skip if we see its
+  // already done"). Computed entirely from what THIS page already has client-side (its own
+  // shots + its own fetched rows, including the __publish_images__ row if one exists) - no
+  // extra fetch, no build-time staleness risk (the exact bug class B128 fixed elsewhere). A
+  // deliberately smaller bucket set than the hub's own computeStatus() (no out-of-scope/no-shots/
+  // blocked distinction) - good enough for "skip or not," not a hub replacement.
+  function computeArticleStatus() {
+    if (rowsByShot && rowsByShot['__publish_images__']) {
+      var published = rowsByShot['__publish_images__'].some(function (r) { return r.verdict === 'published'; });
+      if (published) return { cls: 'article-status-published', label: 'Published' };
+    }
+    var counts = statCounts();
+    if (counts.fail > 0) return { cls: 'article-status-fails', label: 'Has fails' };
+    if (counts.neutral > 0) return { cls: 'article-status-review', label: 'Needs review' };
+    if (counts.oldCount > 0) return { cls: 'article-status-progress', label: 'In progress' };
+    return { cls: 'article-status-ready', label: 'Ready to publish' };
+  }
+
   function render() {
     var counts = statCounts();
+    var statusEl = document.getElementById('article-status');
+    if (statusEl) {
+      var st = computeArticleStatus();
+      statusEl.className = 'article-status ' + st.cls;
+      statusEl.textContent = st.label;
+    }
     document.getElementById('stats').innerHTML =
       '<span class="stat stat-neutral"><b>' + counts.newCount + '</b> new UI</span>' +
       '<span class="stat stat-neutral"><b>' + counts.oldCount + '</b> old UI</span>' +
@@ -327,6 +420,11 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
     Array.prototype.forEach.call(document.querySelectorAll('.vbtn'), function (btn) {
       btn.addEventListener('click', function () {
         setVerdict(btn.getAttribute('data-id'), btn.getAttribute('data-val'));
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.reason-btn'), function (btn) {
+      btn.addEventListener('click', function () {
+        setReason(btn.getAttribute('data-id'), btn.getAttribute('data-reason'));
       });
     });
     Array.prototype.forEach.call(document.querySelectorAll('.notes-input'), function (ta) {
@@ -393,10 +491,33 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
     var current = myRow(shotId);
     var next = (current && current.verdict === val) ? '' : val; // click again to clear
     var note = current ? (current.note || '') : '';
-    upsertLocalRow(shotId, { verdict: next, note: note });
+    // A fix-type reason only means anything for a Fail - clear it if the verdict is leaving
+    // Fail (Pass, or cleared back to unreviewed), so a stale "Recapture" tag can't sit on a
+    // shot that's since been marked Pass.
+    var reason = next === 'fail' ? myReason(shotId) : '';
+    upsertLocalRow(shotId, { verdict: next, note: note, reasons: reason });
     render();
     setSyncStatus('Saving…', false);
-    postRows([{ reviewer: name, article_id: meta.articleId, article: meta.articleTitle, slot: shotId, shot_id: shotId, verdict: next, reasons: [], note: note, boxes: [] }])
+    postRows([{ reviewer: name, article_id: meta.articleId, article: meta.articleTitle, slot: shotId, shot_id: shotId, verdict: next, reasons: reason ? [reason] : [], note: note, boxes: [] }])
+      .then(function (resp) {
+        if (resp && resp.ok) setSyncStatus('Saved', false);
+        else setSyncStatus('Not saved — ' + (resp && resp.error ? resp.error : 'unknown error'), true);
+      })
+      .catch(function (e) { setSyncStatus('Not saved — network error (' + e.message + ')', true); });
+  }
+
+  function setReason(shotId, val) {
+    var name = ensureReviewerName();
+    if (!name) return;
+    var current = myRow(shotId);
+    var currentReason = myReason(shotId);
+    var next = currentReason === val ? '' : val; // click again to clear
+    var verdict = current ? current.verdict : '';
+    var note = current ? (current.note || '') : '';
+    upsertLocalRow(shotId, { reasons: next });
+    render();
+    setSyncStatus('Saving…', false);
+    postRows([{ reviewer: name, article_id: meta.articleId, article: meta.articleTitle, slot: shotId, shot_id: shotId, verdict: verdict, reasons: next ? [next] : [], note: note, boxes: [] }])
       .then(function (resp) {
         if (resp && resp.ok) setSyncStatus('Saved', false);
         else setSyncStatus('Not saved — ' + (resp && resp.error ? resp.error : 'unknown error'), true);
@@ -416,9 +537,10 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
     var current = myRow(shotId);
     if (current && (current.note || '') === val) return;
     var verdict = current ? current.verdict : '';
+    var reason = myReason(shotId);
     upsertLocalRow(shotId, { note: val });
     setSyncStatus('Saving…', false);
-    postRows([{ reviewer: name, article_id: meta.articleId, article: meta.articleTitle, slot: shotId, shot_id: shotId, verdict: verdict, reasons: [], note: val, boxes: [] }])
+    postRows([{ reviewer: name, article_id: meta.articleId, article: meta.articleTitle, slot: shotId, shot_id: shotId, verdict: verdict, reasons: reason ? [reason] : [], note: val, boxes: [] }])
       .then(function (resp) {
         if (resp && resp.ok) setSyncStatus('Saved', false);
         else setSyncStatus('Not saved — ' + (resp && resp.error ? resp.error : 'unknown error'), true);
