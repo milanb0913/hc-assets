@@ -10,8 +10,11 @@
   --pass: #1a7a4c; --pass-soft: #e4f5ec; --fail: #b3261e; --fail-soft: #fbe9e7;
   --pending: #8a6d00; --pending-soft: #fbf3d9; --shadow: rgba(30, 36, 48, 0.10);
   /* Published's own color (2026-09-05, Milan) - distinct from --pass so a genuinely-live
-     article reads as its own state, not a shade of "shot QA passed". Same blue as the Style
-     Guide's own Link/Info token (#1D4ED8) for consistency with the rest of the project. */
+     article reads as its own state, not a shade of "shot QA passed". Exact value from the
+     real AwardSpring Style Guide v1.5 color reference (Semantic > Info, #1D4ED8; dark-mode
+     sibling "Info 300" #60A5FA below) - to-be-named/company-brand-guide/Color_Reference.html,
+     confirmed 2026-09-05, not an improvised blue. Same token the Style Guide's own Link/Info
+     rule already cites, so this stays consistent with the rest of the project. */
   --info: #1D4ED8; --info-soft: #e5ecfc;
 }
 @media (prefers-color-scheme: dark) {
@@ -21,7 +24,7 @@
     --accent-soft: #3a2431;
     --pass: #4fd08c; --pass-soft: #16281f; --fail: #ff6b61; --fail-soft: #2c1815;
     --pending: #e0c04a; --pending-soft: #2c2611; --shadow: rgba(0, 0, 0, 0.45);
-    --info: #7ba7ff; --info-soft: #1a2540;
+    --info: #60A5FA; --info-soft: #1a2540;
   }
 }
 :root[data-theme="dark"] {
