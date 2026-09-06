@@ -891,16 +891,18 @@ main#main-content { min-width: 0; }
     return { counts: counts, inScope: inScope, articlesReady: articlesReady, dueShotsTotal: dueShotsTotal, dueShotsShipped: dueShotsShipped };
   }
 
+  // REVISED 2026-09-06 (Milan: "that's what ppl care about" - real, live, reader-facing done-
+  // ness, not a QA-pipeline abstraction). Down to ONE hero-stat now - Published/inScope - with
+  // "Articles ready" (articlesReady, the old headline) and "Shots ready" (the old second
+  // hero-stat) both demoted to small gray context pills in statusPillsHtml() below, next to
+  // "In scope". Milan's own framing for the split: Published is the number that matters at a
+  // glance; Ready/Shots are useful supporting context, not headline material.
   function heroStatsHtml() {
     var h = computeHeadlineCounts();
     return (
       '<div class="hero-stat">' +
-        '<span class="num">' + h.articlesReady + '<span class="of"> / ' + h.inScope + '</span></span>' +
-        '<span class="lbl">Articles ready</span>' +
-      '</div>' +
-      '<div class="hero-stat">' +
-        '<span class="num">' + h.dueShotsShipped + '<span class="of"> / ' + h.dueShotsTotal + '</span></span>' +
-        '<span class="lbl">Shots ready</span>' +
+        '<span class="num">' + h.counts.published + '<span class="of"> / ' + h.inScope + '</span></span>' +
+        '<span class="lbl">Published</span>' +
       '</div>'
     );
   }
@@ -919,7 +921,14 @@ main#main-content { min-width: 0; }
         '" data-toggle-status="' + k + '" title="Toggle ' + esc(meta.label) + ' in the Status filter">' +
         esc(meta.label) + '<span class="status-pill-n">' + h.counts[k] + '</span></button>';
     }).join('');
-    return pills + '<button type="button" class="status-pill status-muted" disabled>In scope<span class="status-pill-n">' + h.inScope + '</span></button>';
+    // Ready/Shots (2026-09-06, Milan): the two former hero-stats, demoted to small gray context
+    // pills alongside In scope - not real STATUS_ORDER filter toggles (Ready is a UNION across
+    // three statuses, Shots is a shot-level count, neither maps to one status key), so both are
+    // disabled like In scope already was, not wired to appliedFilters.status.
+    return pills +
+      '<button type="button" class="status-pill status-muted" disabled>In scope<span class="status-pill-n">' + h.inScope + '</span></button>' +
+      '<button type="button" class="status-pill status-muted" disabled title="Ready, Published, or No Shot - nothing left to do">Ready<span class="status-pill-n">' + h.articlesReady + '</span></button>' +
+      '<button type="button" class="status-pill status-muted" disabled title="Due shots shipped, across every in-scope article">Shots<span class="status-pill-n">' + h.dueShotsShipped + ' / ' + h.dueShotsTotal + '</span></button>';
   }
   // Re-renders just the pill row's active/inactive state - needed anywhere appliedFilters.status
   // can change OTHER than clicking a pill itself (the modal's own checkboxes, the applied-filter
