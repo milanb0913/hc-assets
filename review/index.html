@@ -557,6 +557,11 @@ main#main-content { min-width: 0; }
       // images) can never have "backlog" - there is nothing to capture, ever.
       // Distinct from a real no-manifest article with live images waiting.
       if (!a.legacyImageCount) return 'no-shots';
+      // 'no-data'/"Not Started" is now reserved for EXACTLY this - no manifest exists at all
+      // (2026-09-06, Milan: "Not Started should [mean] nothing has been done. No manifest, no
+      // shots attempted, no planning, nothing."). The other case that used to share this label
+      // (a manifest that exists, partially shipped, unblocked) moved to 'blocked' below - see
+      // that branch's own updated comment.
       return 'no-data';
     }
     var due = a.dueShots || 0;
@@ -569,20 +574,24 @@ main#main-content { min-width: 0; }
     // kind of waiting state when it was really already "done" the whole time.
     if (due === 0) return 'published';
     // Started - Team Needed (2026-08-31, Milan): the article-level roll-up of the shot-level
-    // structured `blocked` signal (see survey-all-articles.mjs). Checked BEFORE Has Fails -
-    // a shot that's blocked is never shipped, so this and "fully captured" can't overlap, but
-    // "needs you right now" is the more urgent thing to surface than a fail Claude could
-    // eventually retry on its own. A blocked shot's dueShipped can never reach due, which is
-    // exactly why plain "In Progress" is gone: under autonomous operation, the ONLY reason
-    // capture sits partway done for any real duration is a genuine blocker - anything else
-    // resolves in the same session and isn't worth a distinct status a human has to read.
+    // structured `blocked` signal (see survey-all-articles.mjs) - "needs you right now" is the
+    // more urgent thing to surface than a fail Claude could eventually retry on its own, so this
+    // is checked BEFORE Has Fails. A blocked shot's dueShipped can never reach due.
     if (hasBlockedShot(a)) return 'blocked';
     var dueShipped = a.dueShippedCount || 0;
     if (c.fail > 0) return 'has-fails';
-    // Merged into Not Started (2026-08-31) rather than kept as its own "In Progress" state -
-    // see the comment above. From a human's perspective "no manifest yet" and "manifest
-    // exists, unblocked, still capturing" mean the same thing: nothing for you to do here.
-    if (dueShipped < due) return 'no-data';
+    // REVISED 2026-09-06 (Milan, caught live on "What Is Auto-Apply?" 2/4 shipped-and-passed
+    // and "Additional Requirements: A Detailed Guide" 14/16 shipped-and-passed, both reading as
+    // "Not Started"): this used to also return 'no-data', on the theory that under autonomous
+    // operation the only reason capture sits partway done for any real duration is a genuine
+    // blocker - false in practice, these two sat mid-capture without ever resolving. A manifest
+    // that exists with real, verified, unblocked progress is NOT "nothing has been done" (Not
+    // Started's real meaning now - see the no-manifest branch above) - it's the same "someone
+    // needs to go finish this" situation as a structurally blocked article, just without a
+    // specific technical blocker recorded. Folded into the same 'blocked' bucket rather than
+    // reintroducing a third "In Progress" status - both mean the same thing to a reader: real
+    // work started, real work remains, nobody's actively on it right now.
+    if (dueShipped < due) return 'blocked';
     if (c.neutral > 0) return 'needs-review';
     return 'ready';
   }
@@ -725,8 +734,9 @@ main#main-content { min-width: 0; }
     // Content track (2026-09-02) - shown once shot capture is actually done, not before.
     // "Shots reach All Done" (B115's own trigger condition for Content-Overhaul to unlock on an
     // article) means every due shot is shipped - has-fails/needs-review/ready all satisfy that
-    // (dueShipped >= due is exactly what separates them from no-data/blocked in computeStatus
-    // above); QA outcome on the shots doesn't matter for whether Content work is relevant.
+    // (dueShipped >= due is exactly what separates them from 'blocked' in computeStatus above -
+    // 'no-data' is a different case entirely now, no manifest exists at all); QA outcome on the
+    // shots doesn't matter for whether Content work is relevant.
     var contentHtml = '';
     if (status === 'has-fails' || status === 'needs-review' || status === 'ready' || status === 'published') {
       var cc = contentByArticle[a.id] || { verdict: '', draftUrl: '', staleProse: '', staleProseNote: '' };
