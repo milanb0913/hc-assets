@@ -64,6 +64,20 @@ a { color: inherit; }
 .hero-stat .lbl { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
 .sync-status { font-size: 0.7rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
 .save-status-error { color: var(--fail); font-weight: 600; }
+/* Reviewer-name box (2026-09-06, Milan): "it should also show on the main hub page because
+   actions can be made there too" - same input, same #reviewer-name id, same localStorage key
+   as the per-article review doc's own box (review-static-lib.mjs/review-static-client.js), so
+   a name entered on either page is shared instantly. The hub's masthead is a simple vertical
+   stack (not the per-article page's two-column masthead-left/masthead-right), so this is
+   absolutely positioned into the top-right corner rather than restructured into a second
+   column - matches "top right" placement without touching the rest of the masthead layout. */
+.masthead-reviewer { position: absolute; top: 14px; right: clamp(20px, 5vw, 56px); }
+.reviewer-row { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--ink-soft); }
+.reviewer-row input {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.82rem; color: var(--ink);
+  background: var(--surface-sunken); border: 1.5px solid var(--border); border-radius: 6px; padding: 4px 8px; width: 150px;
+}
+.reviewer-row input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
 .layout { max-width: 1280px; margin: 0 auto; padding: 24px clamp(16px, 5vw, 56px) 100px; transition: padding-top 0.28s ease; }
 main#main-content { min-width: 0; }
 /* Replaces the old sticky left sidebar (2026-09-05, Milan: "kind of janky", and its
@@ -319,6 +333,7 @@ main#main-content { min-width: 0; }
 .content-gate p { color: var(--muted); font-size: 0.9rem; margin: 0; }
 </style>
 <div class="masthead">
+  <div class="masthead-reviewer"><span class="reviewer-row">Reviewing as <input type="text" id="reviewer-name" placeholder="your name"></span></div>
   <h1>HC Review Hub</h1>
   <div id="headline" class="hero-stats"></div>
   <span id="sync-status" class="sync-status"></span>
@@ -520,6 +535,11 @@ main#main-content { min-width: 0; }
     name = (window.prompt('Enter your name to publish (saved on this device, asked once):') || '').trim();
     if (!name) return null;
     setReviewerName(name);
+    // Keep the visible box in sync with a name set via the prompt() fallback (e.g. the first
+    // Pass/Fail/Publish click before anyone's typed into the box directly) - same pattern as
+    // review-static-client.js's own ensureReviewerName.
+    var input = document.getElementById('reviewer-name');
+    if (input) input.value = name;
     return name;
   }
 
@@ -1733,6 +1753,15 @@ main#main-content { min-width: 0; }
       masthead.classList.toggle('masthead-away', away);
       applyPadding();
     }, { passive: true });
+  }
+
+  // Reviewer-name box init (2026-09-06, Milan) - same wiring as review-static-client.js's own
+  // box, so typing a name directly here (not just via the prompt() fallback) persists it too.
+  var reviewerInput = document.getElementById('reviewer-name');
+  if (reviewerInput) {
+    reviewerInput.value = getReviewerName();
+    reviewerInput.addEventListener('change', function () { setReviewerName(reviewerInput.value); });
+    reviewerInput.addEventListener('blur', function () { setReviewerName(reviewerInput.value); });
   }
 
   restoreFilterState();
