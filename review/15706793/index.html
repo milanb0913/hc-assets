@@ -308,16 +308,13 @@ main { max-width: 1180px; margin: 0 auto; padding: 8px clamp(16px, 5vw, 56px) 80
     return '<div class="imgwrap awaiting"><div class="awaiting-msg">' + esc(msg) + '</div></div>';
   }
 
+  // DISABLED 2026-09-09 (Milan): other reviewers' verdicts/notes should stay
+  // in the Sheet but not render on the page anymore, on the hub or on any
+  // individual review page. Kept as a stub (not deleted) so the call site
+  // and otherRows()/rowsByShot plumbing don't need touching, and so this is
+  // a one-line revert if the display is ever wanted back.
   function otherReviewsHtml(s) {
-    var others = otherRows(s.id);
-    if (!others.length) return '';
-    return '<div class="other-reviews"><span class="other-reviews-label">Other reviewers</span>' +
-      others.map(function (r) {
-        var cls = r.verdict === 'pass' ? 'chip-pass' : r.verdict === 'fail' ? 'chip-fail' : 'chip-pending';
-        var label = r.verdict === 'pass' ? 'Pass' : r.verdict === 'fail' ? 'Fail' : 'no verdict';
-        return '<span class="other-review-row"><b>' + esc(r.reviewer) + '</b> <span class="chip ' + cls + '">' + label + '</span>' +
-          (r.note ? ' <span class="other-review-note">' + esc(r.note) + '</span>' : '') + '</span>';
-      }).join('') + '</div>';
+    return '';
   }
 
   function reasonRowHtml(s, v) {
