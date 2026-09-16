@@ -62,6 +62,12 @@ a { color: inherit; }
 .hero-stat .num { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; font-size: 1.15rem; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
 .hero-stat .num .of { color: var(--muted); font-size: 0.85rem; font-weight: 500; }
 .hero-stat .lbl { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
+/* Published's own in-flight/failed indicator (2026-09-16, Milan) - Published is entirely
+   Sheet-derived, and that fetch can take 13-21+ seconds on an Apps Script cold start (measured,
+   not assumed - see static-hub-client.js's fetchSyncRows comment). Without this, a fresh page
+   load silently showed a stale/wrong count as if final for that whole window. */
+.hero-sync-note { font-size: 0.68rem; color: var(--muted); font-style: italic; margin-left: 4px; }
+.hero-sync-note-error { color: var(--fail); font-style: normal; font-weight: 600; }
 .sync-status { font-size: 0.7rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
 .save-status-error { color: var(--fail); font-weight: 600; }
 /* Reviewer-name box (2026-09-06, Milan): "it should also show on the main hub page because
@@ -455,6 +461,16 @@ main#main-content { min-width: 0; }
   // due/shipped numbers immediately - those never depended on the fetch).
   var syncCounts = {};
   var syncLoaded = false;
+  // Set on a real, given-up-on failure (not the in-flight state) - see loadSyncCounts().
+  // Found 2026-09-16 (Milan): the Published count is entirely Sheet-derived (a due=0-only
+  // article aside), but nothing on the page ever showed the fetch was STILL IN FLIGHT -
+  // Apps Script's own cold-start latency measured 13-21+ SECONDS on a fresh page load
+  // (not the quick HTML-redirect throw the old retry logic was written for), so a
+  // just-opened tab silently displayed the wrong, pre-sync Published count as if it were
+  // final for that whole window. heroStatsHtml()/statusPillsHtml() now read this and
+  // syncLoaded together to show an explicit "still loading" or "sync failed" state instead
+  // of a confident-looking wrong number.
+  var syncFailed = false;
 
   // Publish, split into two independent kinds (2026-09-02, Milan): Images and Content go
   // live on very different schedules today (Shots overhaul is ahead of Content overhaul,
@@ -919,10 +935,21 @@ main#main-content { min-width: 0; }
   // glance; Ready/Shots are useful supporting context, not headline material.
   function heroStatsHtml() {
     var h = computeHeadlineCounts();
+    // Published is entirely Sheet-derived (aside from the due=0-only fold-in) - while the
+    // fetch is still in flight (which can genuinely take 13-21+ seconds on an Apps Script
+    // cold start, not just a second or two), say so explicitly rather than showing a
+    // confident-looking number that's about to change. See syncFailed's own comment.
+    var syncNote = '';
+    if (syncFailed) {
+      syncNote = '<span class="hero-sync-note hero-sync-note-error" title="Live QA/publish data could not be loaded - this count only reflects permanently-frozen (nothing-to-capture) articles">⚠ sync failed, count incomplete</span>';
+    } else if (!syncLoaded) {
+      syncNote = '<span class="hero-sync-note">syncing…</span>';
+    }
     return (
       '<div class="hero-stat">' +
         '<span class="num">' + h.counts.published + '<span class="of"> / ' + h.inScope + '</span></span>' +
         '<span class="lbl">Published</span>' +
+        syncNote +
       '</div>'
     );
   }
@@ -1600,9 +1627,18 @@ main#main-content { min-width: 0; }
   // same "one due population" rule the rest of this page follows).
   // Apps Script's exec endpoint occasionally answers a cold-start request with an
   // HTML redirect/interstitial instead of JSON (throws in r.json()) - purely
-  // transient, gone on the next request a moment later. One retry after a short
-  // delay absorbs that without a full page reload; only the second failure is
-  // treated as a real outage.
+  // transient, gone on the next request a moment later. This retry absorbs that
+  // without a full page reload; only running out of retries is treated as a real outage.
+  //
+  // UPDATE 2026-09-16 (Milan, reproduced): the slow case ISN'T a quick throw-and-retry -
+  // measured via performance.getEntriesByType('resource') on a genuinely fresh tab, the
+  // exec endpoint itself can take 13-21+ SECONDS to resolve on a cold start (successfully;
+  // it never throws). Retrying doesn't help that case at all - the fetch just needs to be
+  // given time, and the UI needs to say so instead of showing whatever count happened to
+  // be true before the fetch resolved. See heroStatsHtml()'s syncNote / syncLoaded /
+  // syncFailed for the fix on the display side. Bumped retries 1 -> 2 as a cheap extra
+  // safety net for the genuine-throw case this was originally written for; it does nothing
+  // for the slow-cold-start case, which just has to be waited out.
   function fetchSyncRows(retriesLeft) {
     return fetch(SYNC_ENDPOINT + '?mode=rows')
       .then(function (r) { return r.json(); })
@@ -1614,10 +1650,11 @@ main#main-content { min-width: 0; }
   }
 
   function loadSyncCounts() {
-    if (!SYNC_ENDPOINT) { setSyncStatus('Sync not configured', true); render(); return; }
-    fetchSyncRows(1)
+    if (!SYNC_ENDPOINT) { syncFailed = true; setSyncStatus('Sync not configured', true); render(); return; }
+    fetchSyncRows(2)
       .then(function (data) {
         if (!data || !Array.isArray(data.rows)) {
+          syncFailed = true;
           setSyncStatus('Sync endpoint not returning rows yet (old deployment?) — pass/fail counts show as 0 until it is redeployed', true);
           render();
           return;
@@ -1723,6 +1760,7 @@ main#main-content { min-width: 0; }
         render();
       })
       .catch(function (e) {
+        syncFailed = true;
         setSyncStatus('Sync fetch failed (' + e.message + ') — pass/fail counts show as 0', true);
         render();
       });
