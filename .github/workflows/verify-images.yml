@@ -1,0 +1,50 @@
+# Image gate for milanb0913/hc-assets (s182 build 6). Source of truth: HC-Capture/qa/panel/phase1/hc-assets-ci/verify-images.yml;
+# installed into the image repo by `node qa/panel/phase1/hc-assets-ci/install.mjs`. It FAILS the run when a pushed image-like file has no valid signed stage
+# attestation (see qa/panel/phase1/ci-verify.mjs). It reads no secret and needs none: it verifies with the public key committed in .hc-verify/.
+#
+# IMPORTANT: this workflow only BLOCKS anything once branch protection (or a ruleset) on hc-assets REQUIRES the "verify-images / verify" status check.
+# That is a GitHub repository setting and is Milan's to switch on; it is queued in HC-Capture/review/reports/OPEN-THREADS.md under "Ready to go live".
+# Until then a red run is visible but does not stop a push. A push that edits or deletes THIS file also evades the run until protection is on.
+name: verify-images
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify every pushed image against its signed attestation
+        env:
+          EVENT: ${{ github.event_name }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.sha }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "pull_request" ]; then BEFORE="$PR_BASE"; AFTER="$PR_HEAD"; else BEFORE="$PUSH_BEFORE"; AFTER="$PUSH_AFTER"; fi
+          ZERO="0000000000000000000000000000000000000000"
+          TOOLDIR="$RUNNER_TEMP/hcv"; mkdir -p "$TOOLDIR"
+          # The verifier and the public key come from the commit BEFORE the change (never from the pushed head), so a push cannot swap in its own checker or key.
+          SRC="$BEFORE"; if [ "$BEFORE" = "$ZERO" ]; then SRC="$(git rev-parse origin/HEAD 2>/dev/null || true)"; fi
+          if [ -n "$SRC" ] && git cat-file -e "$SRC:.hc-verify/verify.mjs" 2>/dev/null && git cat-file -e "$SRC:.hc-verify/pubkey.pem" 2>/dev/null; then
+            git show "$SRC:.hc-verify/verify.mjs" > "$TOOLDIR/verify.mjs"
+            git show "$SRC:.hc-verify/pubkey.pem" > "$TOOLDIR/pubkey.pem"
+          else
+            echo "::warning::bootstrap: no verifier at the base commit, using the one in this change (first push only)"
+            cp .hc-verify/verify.mjs "$TOOLDIR/verify.mjs"; cp .hc-verify/pubkey.pem "$TOOLDIR/pubkey.pem"
+          fi
+          BASEREF=""; if [ "$BEFORE" = "$ZERO" ]; then BASEREF="$SRC"; fi
+          node "$TOOLDIR/verify.mjs" --before "$BEFORE" --after "$AFTER" --pubkey "$TOOLDIR/pubkey.pem" --base-ref "$BASEREF"
