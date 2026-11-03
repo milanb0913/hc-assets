@@ -56,12 +56,31 @@ export function canonical(v) {
   return '{' + Object.keys(v).sort().filter((k) => v[k] !== undefined).map((k) => JSON.stringify(k) + ':' + canonical(v[k])).join(',') + '}';
 }
 export const attestationRel = (file, sha256) => `.hc-attest/${sha256}.${crypto.createHash('sha256').update(String(file).replace(/\\/g, '/')).digest('hex').slice(0, 10)}.json`;
-const isAttPath = (p) => /^\.hc-attest\/[0-9a-f]{64}\.[0-9a-f]{10}\.json$/.test(p);
+export const stemOfPath = (file) => String(file).replace(/\\/g, '/').split('/').pop().replace(/^PROD_/, '').replace(/\.(png|gif|apng|webp|jpe?g)$/i, '').replace(/_boxed$/, '');
+export function pathBindsShot(file, shot, sharedAs = null) {
+  if (typeof shot !== 'string' || !shot) return false;
+  const stem = stemOfPath(file);
+  if (stem === shot || stem.endsWith('_' + shot)) return true;
+  return !!sharedAs && typeof sharedAs === 'string' && stem.endsWith('_SHARED_' + sharedAs);
+}
+// attestations are recognised by CONTENT (s182 build 7): anything under .hc-attest/ must be a valid signed attestation at its canonical path; an
+// attestation-shaped name elsewhere gets no special treatment, and an image hidden under an attestation name fails (it is not a valid attestation).
+const inAttestDir = (p) => /^\.hc-attest\//i.test(String(p).replace(/\\/g, '/'));
+export function attestationShape(a) {
+  return !!a && typeof a === 'object' && a.kind === 'stage' && a.v === 2 && /^[0-9a-f]{64}$/.test(a.sha256 || '') && typeof a.file === 'string' && typeof a.shot === 'string' && !!a.shot
+    && Array.isArray(a.shots) && a.shots.length > 0 && a.shots.every((x) => typeof x === 'string' && x) && a.shots.includes(a.shot) && (a.sharedAs === null || typeof a.sharedAs === 'string');
+}
 export function verifyAttestation(a, { file, sha256 }, pub) {
-  if (!a || typeof a !== 'object' || a.kind !== 'stage' || a.v !== 1 || !/^[0-9a-f]{64}$/.test(a.sha256 || '') || typeof a.file !== 'string' || typeof a.shot !== 'string' || !a.shot) return false;
+  if (!attestationShape(a)) return false;
   if (a.file !== String(file).replace(/\\/g, '/') || a.sha256 !== sha256 || typeof a.sig !== 'string' || !a.sig || !pub) return false;
+  if (!pathBindsShot(a.file, a.shot, a.sharedAs)) return false;
   const { sig, ...rest } = a;
   try { return crypto.verify(null, Buffer.from(canonical(rest)), pub, Buffer.from(sig, 'base64')); } catch { return false; }
+}
+export function validAttestationFile(p, buf, pub) {
+  let a; try { a = JSON.parse(buf.toString('utf8')); } catch { return null; }
+  if (!a || typeof a.file !== 'string' || typeof a.sha256 !== 'string') return null;
+  return p === attestationRel(a.file, a.sha256) && verifyAttestation(a, { file: a.file, sha256: a.sha256 }, pub) ? a : null;
 }
 
 // ---- git (every call ignores replace refs, like the local hook)
@@ -104,15 +123,16 @@ export function verifyRange({ repo = '.', before, after, pub, baseRef = null }) 
   const blob = (sha) => run(repo, ['cat-file', 'blob', sha]);
   const bad = structural.map((x) => ({ path: x.path, sha8: '--------', commit: x.commit.slice(0, 8), why: x.why }));
   const atts = new Map();
-  for (const f of seen.values()) if (isAttPath(f.path)) { try { const a = JSON.parse(blob(f.blob).toString('utf8')); if (a && a.file && a.sha256) atts.set(`${a.file}|${a.sha256}`, a); } catch { /* not an attestation */ } }
+  for (const f of seen.values()) if (inAttestDir(f.path)) { const a = validAttestationFile(f.path, blob(f.blob), pub); if (a) atts.set(`${a.file}|${a.sha256}`, a); }
   const attOf = (p, sha) => {
     const a = atts.get(`${p}|${sha}`); if (a && verifyAttestation(a, { file: p, sha256: sha }, pub)) return a;
     try { const t = JSON.parse(run(repo, ['cat-file', 'blob', `${peeled}:${attestationRel(p, sha)}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })); return verifyAttestation(t, { file: p, sha256: sha }, pub) ? t : null; } catch { return null; }
   };
   let checked = 0;
   for (const f of seen.values()) {
-    if (isAttPath(f.path)) continue;
-    const buf = blob(f.blob); if (!needsPanel(f.path, buf)) continue;
+    const buf = blob(f.blob);
+    if (inAttestDir(f.path)) { if (!validAttestationFile(f.path, buf, pub)) { checked++; bad.push({ path: f.path, sha8: crypto.createHash('sha256').update(buf).digest('hex').slice(0, 8), commit: f.commit.slice(0, 8), why: 'a file under .hc-attest/ must be a valid signed stage attestation at its canonical path; this one is not (image bytes or garbage hidden under an attestation name)' }); } continue; }
+    if (!needsPanel(f.path, buf)) continue;
     checked++; const sha = crypto.createHash('sha256').update(buf).digest('hex');
     if (!attOf(f.path, sha)) bad.push({ path: f.path, sha8: sha.slice(0, 8), commit: f.commit.slice(0, 8), why: 'no valid signed stage attestation for this path and these exact bytes (stage through qa/lib/stage-gate.mjs stageFile)' });
   }
