@@ -42,9 +42,10 @@ jobs:
           if [ -n "$SRC" ] && git cat-file -e "$SRC:.hc-verify/verify.mjs" 2>/dev/null && git cat-file -e "$SRC:.hc-verify/pubkey.pem" 2>/dev/null; then
             git show "$SRC:.hc-verify/verify.mjs" > "$TOOLDIR/verify.mjs"
             git show "$SRC:.hc-verify/pubkey.pem" > "$TOOLDIR/pubkey.pem"
+            git show "$SRC:.hc-verify/frozen.json" > "$TOOLDIR/frozen.json" 2>/dev/null || echo '[]' > "$TOOLDIR/frozen.json"
           else
             echo "::warning::bootstrap: no verifier at the base commit, using the one in this change (first push only)"
-            cp .hc-verify/verify.mjs "$TOOLDIR/verify.mjs"; cp .hc-verify/pubkey.pem "$TOOLDIR/pubkey.pem"
+            cp .hc-verify/verify.mjs "$TOOLDIR/verify.mjs"; cp .hc-verify/pubkey.pem "$TOOLDIR/pubkey.pem"; cp .hc-verify/frozen.json "$TOOLDIR/frozen.json" 2>/dev/null || echo '[]' > "$TOOLDIR/frozen.json"
           fi
           BASEREF=""; if [ "$BEFORE" = "$ZERO" ]; then BASEREF="$SRC"; fi
-          node "$TOOLDIR/verify.mjs" --before "$BEFORE" --after "$AFTER" --pubkey "$TOOLDIR/pubkey.pem" --base-ref "$BASEREF"
+          node "$TOOLDIR/verify.mjs" --before "$BEFORE" --after "$AFTER" --pubkey "$TOOLDIR/pubkey.pem" --frozen "$TOOLDIR/frozen.json" --base-ref "$BASEREF"
