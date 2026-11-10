@@ -1,0 +1,34 @@
+{
+ "v": 3,
+ "kind": "stage",
+ "file": "PROD_RN_2026_November92026_rn20261109-06-help-text-admin.png",
+ "sha256": "088904965c6cca117445ee2cc26f1b20e98b0547616317bbb9b3607f09646f85",
+ "shot": "rn20261109-06-help-text-admin",
+ "shots": [
+  "rn20261109-06-help-text-admin"
+ ],
+ "sharedAs": null,
+ "pass": {
+  "at": "2026-11-10T19:12:18.560Z",
+  "shot": "rn20261109-06-help-text-admin",
+  "file": "RN_2026_November92026_rn20261109-06-help-text-admin.png",
+  "sha256": "088904965c6cca117445ee2cc26f1b20e98b0547616317bbb9b3607f09646f85",
+  "overall": "PASS",
+  "reviewers": {
+   "gatekeeper": "PASS",
+   "edge-inspector": "PASS",
+   "annotation-auditor": "PASS",
+   "consistency-auditor": "PASS",
+   "subject-state-verifier": "PASS",
+   "chair": "PASS"
+  },
+  "canaryCaught": true,
+  "registrar": "hq-1110-rn-shots-1",
+  "notes": "",
+  "ruleSet": "spec-2026-10-30.1",
+  "sig": "AZ7ha71kupCi8tB6e28OiZO5T715MyP4KKFy5K+isnblnD4bAv27W+y1JKbe5WUzR2UG2O0fo8ozAqCoNsnZBA=="
+ },
+ "frozen": false,
+ "at": "2026-11-10T20:09:31.399Z",
+ "sig": "T5VeyCwFYsVIbdlZ1DQkBu7bDIk3TR2FjZtZCZx1C+ePi6JIbENnI5nnF/5Rm/3Hi7ZEHdlX9FEEN18jy1wADQ=="
+}
