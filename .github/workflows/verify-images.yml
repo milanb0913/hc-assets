@@ -32,13 +32,16 @@ jobs:
           PUSH_AFTER: ${{ github.sha }}
           PR_BASE: ${{ github.event.pull_request.base.sha }}
           PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -euo pipefail
           if [ "$EVENT" = "pull_request" ]; then BEFORE="$PR_BASE"; AFTER="$PR_HEAD"; else BEFORE="$PUSH_BEFORE"; AFTER="$PUSH_AFTER"; fi
           ZERO="0000000000000000000000000000000000000000"
           TOOLDIR="$RUNNER_TEMP/hcv"; mkdir -p "$TOOLDIR"
           # The verifier and the public key come from the commit BEFORE the change (never from the pushed head), so a push cannot swap in its own checker or key.
-          SRC="$BEFORE"; if [ "$BEFORE" = "$ZERO" ]; then SRC="$(git rev-parse origin/HEAD 2>/dev/null || true)"; fi
+          # New-branch push (BEFORE all zeros): base on the default branch tip. actions/checkout does not create origin/HEAD, so the old lookup came back empty, which fell into the bootstrap path
+          # and made the verifier walk the WHOLE history (s190: 471 commits, 4076 legacy images, run 42892704110). The default branch name comes from the event payload, not from the pushed head.
+          SRC="$BEFORE"; if [ "$BEFORE" = "$ZERO" ]; then SRC="$(git rev-parse "refs/remotes/origin/$DEFAULT_BRANCH" 2>/dev/null || true)"; fi
           if [ -n "$SRC" ] && git cat-file -e "$SRC:.hc-verify/verify.mjs" 2>/dev/null && git cat-file -e "$SRC:.hc-verify/pubkey.pem" 2>/dev/null; then
             git show "$SRC:.hc-verify/verify.mjs" > "$TOOLDIR/verify.mjs"
             git show "$SRC:.hc-verify/pubkey.pem" > "$TOOLDIR/pubkey.pem"
