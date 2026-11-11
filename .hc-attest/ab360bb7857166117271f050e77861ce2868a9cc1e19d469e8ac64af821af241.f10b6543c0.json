@@ -1,0 +1,34 @@
+{
+ "v": 3,
+ "kind": "stage",
+ "file": "staging/PROD_SM_Creating_and_Setting_Up_Review_Groups_ConfiguringReviewerAssignments_cra-05-v4-select-applicant.png",
+ "sha256": "ab360bb7857166117271f050e77861ce2868a9cc1e19d469e8ac64af821af241",
+ "shot": "cra-05-v4-select-applicant",
+ "shots": [
+  "cra-05-v4-select-applicant"
+ ],
+ "sharedAs": null,
+ "pass": {
+  "at": "2026-11-10T21:35:18.734Z",
+  "shot": "cra-05-v4-select-applicant",
+  "file": "SM_Creating_and_Setting_Up_Review_Groups_ConfiguringReviewerAssignments_cra-05-v4-select-applicant_boxed.png",
+  "sha256": "ab360bb7857166117271f050e77861ce2868a9cc1e19d469e8ac64af821af241",
+  "overall": "PASS",
+  "reviewers": {
+   "gatekeeper": "PASS",
+   "edge-inspector": "PASS",
+   "annotation-auditor": "PASS",
+   "consistency-auditor": "PASS",
+   "subject-state-verifier": "PASS",
+   "chair": "PASS"
+  },
+  "canaryCaught": true,
+  "registrar": "pilot-hc p1110",
+  "notes": "",
+  "ruleSet": "spec-2026-10-30.1",
+  "sig": "Aqj34ptF/e5qo/wAnyr0bOOJw99d3Tqskn49xykKrkIdBALx/JGTmg4uZ6X5cwzXe4Jkf7Qx5tZkh5V+apbOAA=="
+ },
+ "frozen": false,
+ "at": "2026-11-11T00:38:57.572Z",
+ "sig": "vqTvvm2LcoqdgnskFb5iRSNyQe2T91/C/N/0j+sLWDB6O3tP6ObtLkgA0E8t6rwCm0h6duYsyXoQ3qqgOyFADA=="
+}

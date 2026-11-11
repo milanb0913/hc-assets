@@ -1,0 +1,15 @@
+{
+ "v": 3,
+ "kind": "stage",
+ "file": "staging/PROD_SM_Getting_Started_SpringAPIs_SpringAPIsOverview_sapi-02-create-token-dialog.png",
+ "sha256": "bce4ef622490f67c5983f74563b83bbbcbf7907483809ecb7736f78bb526c41d",
+ "shot": "sapi-02-create-token-dialog",
+ "shots": [
+  "sapi-02-create-token-dialog"
+ ],
+ "sharedAs": null,
+ "pass": null,
+ "frozen": true,
+ "at": "2026-11-10T20:07:58.646Z",
+ "sig": "XY/+aCuBAEob4OTB8WXCz6XbSM2UKlMXqzJc6dNxl8AYcxUScgxoeX03QOg2jXF6aXTJN3vw5F/WyxtlHLjYBA=="
+}

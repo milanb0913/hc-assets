@@ -1,0 +1,15 @@
+{
+ "v": 3,
+ "kind": "stage",
+ "file": "staging/PROD_SM_Setting_Up_Scholarship_Tasks_(Follow-Ups)_PostAwardFollowUpNotifications_pafu-05-student-dashboard_boxed.png",
+ "sha256": "b499f1bcedf1d1bdbbb2380e804259630ab476b1733cdd1cc12bd7b2ba32555b",
+ "shot": "pafu-05-student-dashboard",
+ "shots": [
+  "pafu-05-student-dashboard"
+ ],
+ "sharedAs": null,
+ "pass": null,
+ "frozen": true,
+ "at": "2026-11-10T20:08:02.497Z",
+ "sig": "BZv6sYq6CL9ffx1eJhBjxDRWW4VTUhwpoz8M4NRq5PkjbOt6x9yNBIAE3mRk3Dyr3AkuBZSzJvS4FJIQtbJZDQ=="
+}

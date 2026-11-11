@@ -1,0 +1,15 @@
+{
+ "v": 3,
+ "kind": "stage",
+ "file": "staging/PROD_SM_Student_Experience_and_Navigating_Student_Records_StudentRecordUserActivityTab_sua-02-expanded-email_boxed.png",
+ "sha256": "33ea4d6d4dd88885dae25beb4d0e25a3b4253c44dd6008de86c8ce3d7c1a75f5",
+ "shot": "sua-02-expanded-email",
+ "shots": [
+  "sua-02-expanded-email"
+ ],
+ "sharedAs": null,
+ "pass": null,
+ "frozen": true,
+ "at": "2026-11-10T20:08:03.541Z",
+ "sig": "pz/ZOu/u0x2GXkV/WkwF+oL3/Zzos6RsMMDaj2L2b/WIx8CI8g2pLGRNEtrJMm3RpgIKdzdjrE3xp6qZx8XEBg=="
+}

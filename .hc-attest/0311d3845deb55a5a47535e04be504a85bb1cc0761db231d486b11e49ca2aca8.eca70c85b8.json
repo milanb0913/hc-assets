@@ -1,0 +1,34 @@
+{
+ "v": 3,
+ "kind": "stage",
+ "file": "staging/PROD_RN_2026_November92026_rn20261109-07-help-text-student.png",
+ "sha256": "0311d3845deb55a5a47535e04be504a85bb1cc0761db231d486b11e49ca2aca8",
+ "shot": "rn20261109-07-help-text-student",
+ "shots": [
+  "rn20261109-07-help-text-student"
+ ],
+ "sharedAs": null,
+ "pass": {
+  "at": "2026-11-10T18:54:08.366Z",
+  "shot": "rn20261109-07-help-text-student",
+  "file": "RN_2026_November92026_rn20261109-07-help-text-student.png",
+  "sha256": "0311d3845deb55a5a47535e04be504a85bb1cc0761db231d486b11e49ca2aca8",
+  "overall": "PASS",
+  "reviewers": {
+   "gatekeeper": "PASS",
+   "edge-inspector": "PASS",
+   "annotation-auditor": "PASS",
+   "consistency-auditor": "PASS",
+   "subject-state-verifier": "PASS",
+   "chair": "PASS"
+  },
+  "canaryCaught": true,
+  "registrar": "hq-1110-rn-shots-1",
+  "notes": "",
+  "ruleSet": "spec-2026-10-30.1",
+  "sig": "dS43kwxTKZwNz7oLtds/8/jG1HwIg7F4n/UXKMI12xH/haOKrKoAasURYgayDmLvWEju7jg1ysgiY39NoMoMAQ=="
+ },
+ "frozen": false,
+ "at": "2026-11-10T20:07:57.900Z",
+ "sig": "CAvy+XhH5tEsnTu6tZch56oL35CWXkDyrbs34GEsV66lNzu4s7Xc/hszyX552IpR8y8enCUGmRRIgA5SqDr1Ag=="
+}

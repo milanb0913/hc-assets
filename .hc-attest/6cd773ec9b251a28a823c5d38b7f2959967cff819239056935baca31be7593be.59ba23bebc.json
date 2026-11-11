@@ -1,0 +1,34 @@
+{
+ "v": 3,
+ "kind": "stage",
+ "file": "staging/PROD_SM_Creating_and_Setting_Up_Review_Groups_ConfiguringReviewerAssignments_cra-02-v4-add-reviewer-search.png",
+ "sha256": "6cd773ec9b251a28a823c5d38b7f2959967cff819239056935baca31be7593be",
+ "shot": "cra-02-v4-add-reviewer-search",
+ "shots": [
+  "cra-02-v4-add-reviewer-search"
+ ],
+ "sharedAs": null,
+ "pass": {
+  "at": "2026-11-10T21:35:17.985Z",
+  "shot": "cra-02-v4-add-reviewer-search",
+  "file": "SM_Creating_and_Setting_Up_Review_Groups_ConfiguringReviewerAssignments_cra-02-v4-add-reviewer-search_boxed.png",
+  "sha256": "6cd773ec9b251a28a823c5d38b7f2959967cff819239056935baca31be7593be",
+  "overall": "PASS",
+  "reviewers": {
+   "gatekeeper": "PASS",
+   "edge-inspector": "PASS",
+   "annotation-auditor": "PASS",
+   "consistency-auditor": "PASS",
+   "subject-state-verifier": "PASS",
+   "chair": "PASS"
+  },
+  "canaryCaught": true,
+  "registrar": "pilot-hc p1110",
+  "notes": "",
+  "ruleSet": "spec-2026-10-30.1",
+  "sig": "DX7r1OBxS9XUXxVgaWs5fHGrfr6VeJaMLbwOmlOWqTBYWBuYaqKJK8ia+hxcPbiHhrjz8X30EUQDZgUiVzCvBA=="
+ },
+ "frozen": false,
+ "at": "2026-11-11T00:38:49.743Z",
+ "sig": "RYf7Sfuoptm+6L82V2VhbDOaAX/cXRrrW9Toxcykz1yUo+QpxSTJpH6yHvbV/st+0SRhK8kW85FYWBDlLMaRCQ=="
+}

@@ -1,0 +1,34 @@
+{
+ "v": 3,
+ "kind": "stage",
+ "file": "staging/PROD_SM_Creating_and_Setting_Up_Review_Groups_ConfiguringReviewerAssignments_cra-01-v4-assignment-page.png",
+ "sha256": "a99a1acaca0276d12975c943d259793ddcc179d870debfabdb0c576e0275b8db",
+ "shot": "cra-01-v4-assignment-page",
+ "shots": [
+  "cra-01-v4-assignment-page"
+ ],
+ "sharedAs": null,
+ "pass": {
+  "at": "2026-11-11T00:36:30.318Z",
+  "shot": "cra-01-v4-assignment-page",
+  "file": "SM_Creating_and_Setting_Up_Review_Groups_ConfiguringReviewerAssignments_cra-01-v4-assignment-page_boxed.png",
+  "sha256": "a99a1acaca0276d12975c943d259793ddcc179d870debfabdb0c576e0275b8db",
+  "overall": "PASS",
+  "reviewers": {
+   "gatekeeper": "PASS",
+   "edge-inspector": "PASS",
+   "annotation-auditor": "PASS",
+   "consistency-auditor": "PASS",
+   "subject-state-verifier": "PASS",
+   "chair": "PASS"
+  },
+  "canaryCaught": true,
+  "registrar": "hq-1110-rn-shots-1 r3: same panel run, recorded on the boxed bytes that ship (pack full.png is the boxed render)",
+  "notes": "",
+  "ruleSet": "spec-2026-10-30.1",
+  "sig": "YF4IinvEd58ZXfKNx7SXbF24k6vGOFiPwfZUGOCttfpjxZAEW3CD1XiO5Tzhp+zmxFdfgWdo7oTe2aEz/b85Aw=="
+ },
+ "frozen": false,
+ "at": "2026-11-11T00:38:43.663Z",
+ "sig": "J3tJoVRSjmMqdtRlgWF4agbfpa2N4bFnJ6utaQJyEylfDQL1Twm0cxq+Y3DWl/Jrq+x9geb2HDkEw2Mk4L86Cg=="
+}

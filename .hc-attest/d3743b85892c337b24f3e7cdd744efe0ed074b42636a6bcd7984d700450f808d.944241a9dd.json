@@ -1,0 +1,16 @@
+{
+ "v": 3,
+ "kind": "stage",
+ "file": "staging/PROD_SM_Creating_and_Setting_Up_Review_Groups_ConfiguringScoreCards_sc-04-expand-delete_boxed.png",
+ "sha256": "d3743b85892c337b24f3e7cdd744efe0ed074b42636a6bcd7984d700450f808d",
+ "shot": "sc-04-expand-delete",
+ "shots": [
+  "rg-11-scorecard-delete",
+  "sc-04-expand-delete"
+ ],
+ "sharedAs": "ReviewGroup_ScoreCards-ExpandedCardDelete",
+ "pass": null,
+ "frozen": true,
+ "at": "2026-11-10T20:07:58.461Z",
+ "sig": "nvOO27ClGHT7tDTBwe2EPIZQE/12f0/ltURA4+uM/w+WWUUqP3ag4paMU3tJNaiHrFUgjZFRtcmAcma+m7ZFBw=="
+}

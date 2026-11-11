@@ -1,0 +1,15 @@
+{
+ "v": 3,
+ "kind": "stage",
+ "file": "staging/PROD_SM_StudentExperience_StudentDashboard_stud-06-todo-empty-state.png",
+ "sha256": "a1254fed9fe8d2570e69b43a188650a7ccbe92a66034a732fe7b884deb54a94f",
+ "shot": "stud-06-todo-empty-state",
+ "shots": [
+  "stud-06-todo-empty-state"
+ ],
+ "sharedAs": null,
+ "pass": null,
+ "frozen": true,
+ "at": "2026-11-10T20:08:02.825Z",
+ "sig": "5uXWRVxAgmPpPsEv32o0vveLiTaKfFA9euDYQvI7j0Q5OD9dj6SmJilELjwiYjMW9ucmEt2irMIPnSdonIPoDw=="
+}

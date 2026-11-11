@@ -1,0 +1,15 @@
+{
+ "v": 3,
+ "kind": "stage",
+ "file": "staging/PROD_SM_StudentExperience_StudentDashboard_stud-02-banner-stay-tuned.png",
+ "sha256": "a1254fed9fe8d2570e69b43a188650a7ccbe92a66034a732fe7b884deb54a94f",
+ "shot": "stud-02-banner-stay-tuned",
+ "shots": [
+  "stud-02-banner-stay-tuned"
+ ],
+ "sharedAs": null,
+ "pass": null,
+ "frozen": true,
+ "at": "2026-11-10T20:08:02.667Z",
+ "sig": "zaRjoabc8HyX8sngCn70oWV01VN392/o3Q0L1i/T2/1y4cT3xT5UQYYHBUfYlqO5ORl0ZE9vBY3cDvbmLWELBg=="
+}

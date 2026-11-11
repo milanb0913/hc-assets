@@ -1,0 +1,34 @@
+{
+ "v": 3,
+ "kind": "stage",
+ "file": "staging/PROD_Donor_Management_Fundraising_PaymentPagesDetailedGuide_pp-04-gift-amounts-step.png",
+ "sha256": "f14abb741ba96789bc83f5abd117b1c92f884a970d5d673e5cc29b787fda8483",
+ "shot": "pp-04-gift-amounts-step",
+ "shots": [
+  "pp-04-gift-amounts-step"
+ ],
+ "sharedAs": null,
+ "pass": {
+  "at": "2026-11-10T08:21:08.503Z",
+  "shot": "pp-04-gift-amounts-step",
+  "file": "Donor_Management_Fundraising_PaymentPagesDetailedGuide_pp-04-gift-amounts-step.png",
+  "sha256": "f14abb741ba96789bc83f5abd117b1c92f884a970d5d673e5cc29b787fda8483",
+  "overall": "PASS",
+  "reviewers": {
+   "gatekeeper": "PASS",
+   "edge-inspector": "PASS",
+   "annotation-auditor": "PASS",
+   "consistency-auditor": "PASS",
+   "subject-state-verifier": "PASS",
+   "chair": "PASS"
+  },
+  "canaryCaught": true,
+  "registrar": "R-034 panel registrar",
+  "notes": "",
+  "ruleSet": "spec-2026-10-30.1",
+  "sig": "Ly8IPxYGjVc2dXNrl+HFDCUskizP4AN7xieM8EqlnWyLTYsN1FunmT0R2ukUbgvvVXH2qG0ZqBRY8DmK3zk6Aw=="
+ },
+ "frozen": false,
+ "at": "2026-11-10T20:07:27.937Z",
+ "sig": "/jpZUo8oya6Jt1M1GwsQc/zPOEWTaupME85IIiY4RhjcCixVDcIbXMwaUhbAbMKQkjMw9eqORSfIwYC+WVXKAQ=="
+}

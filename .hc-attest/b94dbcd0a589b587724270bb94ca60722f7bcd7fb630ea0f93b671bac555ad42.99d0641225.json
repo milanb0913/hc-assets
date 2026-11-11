@@ -1,0 +1,34 @@
+{
+ "v": 3,
+ "kind": "stage",
+ "file": "staging/PROD_Donor_Management_Fundraising_PaymentPagesDetailedGuide_pp-07-thank-you-step.png",
+ "sha256": "b94dbcd0a589b587724270bb94ca60722f7bcd7fb630ea0f93b671bac555ad42",
+ "shot": "pp-07-thank-you-step",
+ "shots": [
+  "pp-07-thank-you-step"
+ ],
+ "sharedAs": null,
+ "pass": {
+  "at": "2026-11-10T09:16:05.886Z",
+  "shot": "pp-07-thank-you-step",
+  "file": "Donor_Management_Fundraising_PaymentPagesDetailedGuide_pp-07-thank-you-step.png",
+  "sha256": "b94dbcd0a589b587724270bb94ca60722f7bcd7fb630ea0f93b671bac555ad42",
+  "overall": "PASS",
+  "reviewers": {
+   "gatekeeper": "PASS",
+   "edge-inspector": "PASS",
+   "annotation-auditor": "PASS",
+   "consistency-auditor": "PASS",
+   "subject-state-verifier": "PASS",
+   "chair": "PASS"
+  },
+  "canaryCaught": true,
+  "registrar": "R-016-to-prepublish s186",
+  "notes": "",
+  "ruleSet": "spec-2026-10-30.1",
+  "sig": "KrgmB08P/csL1TlF3692aarPo2MUtgbC1uIFrR4fPQRB/D6JhWITBx8vurPwKnLhIFT933FL2d7QdHCcX+x0DQ=="
+ },
+ "frozen": false,
+ "at": "2026-11-10T20:07:38.025Z",
+ "sig": "K1HmCoUYXqFaV5tUxwNafCZPzeWHyFvE8p6wi7Bgq/Mfp0QanJR6iVffx7BXfoU27kpDpiKr2221jLG+4EEqAA=="
+}
